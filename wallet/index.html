@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wallet | FINNPUTER CORE</title>
+<meta name="description" content="The full record behind a wallet's Puter Score.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">WALLET</div>
+  <h1 id="title">Look up a wallet.</h1>
+  <p class="sub">Its score, where the score comes from, and what we could not measure.</p>
+  <div class="cmd">
+    <input id="addr" autocomplete="off" spellcheck="false" placeholder="wallet address">
+    <button id="go">LOOK UP</button>
+  </div>
+</header>
+
+<section id="out"></section>
+
+</div>
+<script src="/assets/core.js"></script>
+<script>
+chrome_("/smart-money/"); effects();
+
+function render(w, addr){
+  const out = $("#out"); out.innerHTML = "";
+  if (!w || w.known === false){
+    out.append(emptyBox("Not in our rated set.",
+      "That means we have not seen this wallet early in a token we witnessed run. "
+      + "It does not mean the wallet is bad. Coverage is only what FINNPUTER scanned itself."));
+    const a = el("div");
+    a.style.cssText="margin-top:16px;font-family:var(--mono);font-size:11px";
+    a.innerHTML = `<a href="${scanLink(addr)}" target="_blank" rel="noopener">Open on Solscan</a>
+      &nbsp;/&nbsp; <a href="/how/">Why coverage is incomplete</a>`;
+    out.append(a);
+    return;
+  }
+  const c = w.puter_score>=85?"var(--green)":w.puter_score>=75?"var(--gold)":"var(--dim)";
+  const head = el("div","card");
+  head.innerHTML = `<div class="card-top">
+      <div><div class="sym">${short(w.wallet)}</div>
+        <div class="mint">${(w.label||"").replace(/_/g," ")} &middot; ${w.chain||"solana"}</div></div>
+      <div class="score" style="color:${c}">${w.puter_score}<small>PUTER SCORE</small></div>
+    </div>
+    <div class="meta">
+      ${w.measured===false?'<span class="tag warn">thin evidence</span>':'<span class="tag good">measured</span>'}
+      ${(w.label==="sniper_like"||w.label==="received_not_bought")?'<span class="tag bad">capped at 25</span>':""}
+    </div>`;
+  out.append(head);
+
+  const d = el("div","card"); d.style.marginTop="12px";
+  const r = (l,v) => `<div class="bar" style="grid-template-columns:150px 1fr 90px">
+     <span>${l}</span><i></i><u>${v}</u></div>`;
+  d.innerHTML = `<h3>Where the score comes from</h3><div class="bars" style="margin-top:12px">
+    ${r("tokens witnessed", w.winners)}
+    ${r("closed trades", w.closed_trades)}
+    ${r("win rate", w.win_rate==null?"n/a":w.win_rate+"%")}
+    ${r("net returned", (w.net_sol||0).toFixed(2)+" SOL")}
+    ${r("best multiple", w.best_multiple?w.best_multiple.toFixed(2)+"x":"n/a")}
+    ${r("average multiple", w.avg_multiple?w.avg_multiple.toFixed(2)+"x":"n/a")}
+    ${r("average entry", usd(w.avg_entry_mcap))}
+    ${r("best rank", w.best_rank??"n/a")}
+    ${r("bundle sightings", w.bundled_tokens)}
+    ${r("gifted positions", w.gifted_positions)}
+    ${r("rug exposure", w.rug_exposure_pct==null?"n/a":w.rug_exposure_pct+"%")}
+  </div>`;
+  out.append(d);
+
+  const links = el("div");
+  links.style.cssText="margin-top:18px;font-family:var(--mono);font-size:11px";
+  links.innerHTML = `<a href="${scanLink(w.wallet, w.chain)}" target="_blank" rel="noopener">Verify on explorer</a>
+    &nbsp;/&nbsp; <a href="/how/">How this is measured</a>`;
+  out.append(links);
+  $("#title").textContent = short(w.wallet);
+}
+
+async function run(a){
+  a = (a||"").trim(); if (!a) return;
+  $("#go").disabled = true;
+  try{ render(await api("/v1/wallet/"+encodeURIComponent(a)), a); }
+  catch(e){ $("#out").innerHTML=""; $("#out").append(emptyBox("CORE API not reachable.","Check the API constant.")); }
+  history.replaceState(null,"","/wallet/?a="+encodeURIComponent(a));
+  $("#go").disabled = false;
+}
+$("#go").addEventListener("click", () => run($("#addr").value));
+$("#addr").addEventListener("keydown", e => { if(e.key==="Enter") run($("#addr").value); });
+const pre = qs("a"); if (pre){ $("#addr").value = pre; run(pre); }
+</script>
+</body>
+</html>

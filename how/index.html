@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it works | FINNPUTER CORE</title>
+<meta name="description" content="How the Puter Score is measured, what the numbers mean, and what FINNPUTER cannot know.">
+<meta property="og:title" content="How FINNPUTER measures a wallet">
+<meta property="og:description" content="Every input, every weight, and every limit. Written down.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">METHOD</div>
+  <h1>How a wallet<br>gets its number.</h1>
+  <p class="sub">Every input, every weight, and every limit. If you disagree with the method, you can see exactly where.</p>
+</header>
+
+<section class="reveal">
+  <div class="shead"><h2>THE PROBLEM</h2></div>
+  <p class="body">Any tool can tell you <b>what</b> is being bought. Almost none tell you <b>who</b> is buying, and whether that who is real.</p>
+  <p class="body">Four wallets buying the same token in the same minute can be four independent people who each did their own work. Or it can be one person with four addresses, manufacturing the appearance of demand. On a chart these look identical. The difference decides whether the token runs or whether you are the exit.</p>
+  <p class="body">Finding that out by hand takes about twenty minutes of block explorer work per token, and by then the entry is gone.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead">
+    <h2>THE SEVEN STEPS</h2>
+    <p>Nothing here is bought from a data vendor. Every input comes from scans FINNPUTER ran itself.</p>
+  </div>
+  <div class="steps">
+    <div class="step"><h3>Find tokens that actually ran</h3>
+      <p>Every scan FINNPUTER has ever run wrote down the market cap at that moment. A token scanned at $30k that trades at $900k today ran 30x, and we can prove we saw it early because we recorded the before-price ourselves.</p></div>
+    <div class="step"><h3>Pull the first buyers</h3>
+      <p>For each of those tokens, the full swap history is walked and the earliest buyers are ranked by when they first bought.</p></div>
+    <div class="step"><h3>Throw out the ones who did not buy</h3>
+      <p>Many early holders never paid for anything. They were handed the bag by the deployer. Tokens that arrive without payment leaving the wallet are not a trade, and those wallets are labelled and excluded.</p></div>
+    <div class="step"><h3>Separate skill from bots</h3>
+      <p>Every wallet is cross referenced against our own cluster database. A wallet that is early everywhere and appears inside bundles is a sniper bot. Its numbers look excellent by design. It is capped and can never be recommended, whatever the arithmetic says.</p></div>
+    <div class="step"><h3>Count only realised profit</h3>
+      <p>A trade counts as won only when the wallet actually sold back. An open position showing 40x on paper earns zero points here. Paper gains are a screenshot, not a result.</p></div>
+    <div class="step"><h3>Weigh the entry</h3>
+      <p>Buying at $30k and buying at $3M are not the same skill. Average entry market cap is reconstructed from what the wallet actually paid per token, and it moves the score.</p></div>
+    <div class="step"><h3>Watch the survivors</h3>
+      <p>Wallets that clear the bar go on a watchlist. When several of them, with no connection to each other beyond our own rating, buy the same token inside the same window, that is the signal. Only then does the safety engine run.</p></div>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>THE WEIGHTS</h2><p>Puter Score, 0 to 100.</p></div>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>COMPONENT</th><th class="n">RANGE</th><th>WHAT IT MEASURES</th></tr></thead>
+      <tbody>
+        <tr><td>Base by label</td><td class="n">0 to 60</td><td>proven trader, repeatedly early, mixed, once, sniper, gifted</td></tr>
+        <tr><td>Realised profit</td><td class="n">0 to 20</td><td>net returned, and average multiple on closed trades only</td></tr>
+        <tr><td>Entry quality</td><td class="n">0 to 10</td><td>average market cap when they bought</td></tr>
+        <tr><td>Consistency</td><td class="n">0 to 10</td><td>early across several tokens, not once</td></tr>
+        <tr><td>Rug exposure</td><td class="n">0 to -25</td><td>share of touched tokens our scanner later flagged</td></tr>
+        <tr><td>Bundle association</td><td class="n">0 to -30</td><td>appearances inside detected clusters</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>Hard rule.</b> A wallet labelled as a bundler or as having been handed its position cannot exceed 25, regardless of profit. There is no arithmetic that rescues it.</div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>THE OPPORTUNITY SCORE</h2></div>
+  <p class="body">Smart money 35, safety 35, liquidity 15, momentum 15.</p>
+  <div class="note"><b>What we could not measure is never scored as good.</b> If a deep scan fails, safety is not quietly given full marks. It is removed, the total is rescaled over the components that did resolve, and the missing one is named on the card. A blank result and a clean result are not the same thing, and no product should render them the same way.</div>
+  <p class="body">Live mint authority, live freeze authority, or liquidity below the floor caps the total no matter how many good wallets are buying. Smart money being early in a rug happens constantly.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT THIS CANNOT DO</h2><p>The part most tools leave out.</p></div>
+  <div class="grid">
+    <div class="card"><h3>It only knows what we witnessed</h3>
+      <p class="body" style="font-size:13.5px;margin:0">A wallet that made a fortune in tokens FINNPUTER never scanned is invisible here. Coverage grows with every scan. It will never be complete, and a score built on thin evidence is marked as such rather than hidden.</p></div>
+    <div class="card"><h3>It is past tense</h3>
+      <p class="body" style="font-size:13.5px;margin:0">The score says a wallet was early and closed in profit. It does not say that repeats. Nobody knows that, including us.</p></div>
+    <div class="card"><h3>The trail ends at exchanges</h3>
+      <p class="body" style="font-size:13.5px;margin:0">When funds move to a centralised exchange or across a bridge, the chain of custody stops. No tool solves this. Most do not say so.</p></div>
+    <div class="card"><h3>Entry market cap is reconstructed</h3>
+      <p class="body" style="font-size:13.5px;margin:0">It is derived from what was paid per token against current supply. If supply was burned since, the figure drifts. Directionally right, not exact to the dollar.</p></div>
+    <div class="card"><h3>Convergence lags</h3>
+      <p class="body" style="font-size:13.5px;margin:0">Watched wallets are polled on a rotation, so a cluster can be a few minutes old before it appears.</p></div>
+    <div class="card"><h3>The proof seal is not a chain</h3>
+      <p class="body" style="font-size:13.5px;margin:0">Each call is hashed when written. That proves the record was not edited afterwards. It does not prove when it was written. On-chain anchoring is a later step.</p></div>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHY NOBODY ELSE DOES THIS</h2></div>
+  <p class="body">Not because it is difficult. Because it needs history you cannot buy.</p>
+  <p class="body">Contract checks, holder lists and liquidity data are available from vendors, which is why every tool has them and why none of them are a differentiator. Wallet level provenance needs your own record of what you saw, and when, going back months. FINNPUTER has been scanning and storing since early 2026. That archive is the product. Everything on this page is a way of reading it.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT ANY OF IT COSTS</h2></div>
+  <p class="body">This site is free and needs no account.</p>
+  <p class="body">In the bot, <b>trading costs no credits</b>. There is a trade fee and nothing else. Credits exist for one reason: when the AI does work for you, that work costs real money to run, and it would otherwise be free to drain from the outside.</p>
+  <p class="body">Starter credits unlock once your wallet has been funded, which keeps throwaway accounts from farming them. Topping up is one tap from the wallet you already trade with.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>NONE OF THIS IS ADVICE</h2></div>
+  <p class="body">FINNPUTER is an instrument. It reports what it measured and marks what it could not. A high score is not a recommendation, a low risk number is not a guarantee, and a token can fail for reasons no scan detects. Verify addresses yourself and risk only what you can lose.</p>
+</section>
+
+</div>
+
+<script src="/assets/core.js"></script>
+<script>chrome_("/how/"); effects();</script>
+</body>
+</html>

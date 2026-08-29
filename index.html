@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FINNPUTER CORE | Know who is buying, not just what</title>
+<meta name="description" content="Four wallets buying the same token can be four people or one person with four addresses. FINNPUTER tells them apart.">
+<meta property="og:title" content="FINNPUTER CORE">
+<meta property="og:description" content="Know who is buying, not just what.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="mid">
+  <div class="eyebrow">DISCOVER / VERIFY / DECIDE / PROVE</div>
+  <h1 class="shine">Know who is buying.<br>Not just what.</h1>
+  <p class="sub">Four wallets buying the same token can be four independent people, or one person with four addresses. On a chart they look identical. FINNPUTER tells them apart, because it has been watching them for months.</p>
+
+  <div class="cmd">
+    <input id="q" autocomplete="off" spellcheck="false"
+           placeholder="what is smart money buying right now">
+    <button id="go">RUN</button>
+  </div>
+  <div class="hints">
+    <button class="hint">what is smart money buying right now</button>
+    <button class="hint">opportunities under 250k with risk below 25</button>
+    <button class="hint">show me the best wallets you know</button>
+  </div>
+  <div class="trace" id="trace">
+    <div class="trace-hd"><span class="dot"></span><span id="traceTitle">WORKING</span></div>
+    <div class="trace-body" id="traceBody"></div>
+  </div>
+</header>
+
+<section class="reveal">
+  <div class="shead"><h2>WHY THIS EXISTS</h2></div>
+  <p class="body">Every tool on the market checks the <b>token</b>: is the contract clean, is liquidity locked, who holds the top ten. That data is sold by vendors, which is why everyone has it and why it separates nobody.</p>
+  <p class="body">Almost nothing checks the <b>wallets</b>. Whether the buyers have a history, whether they paid for their position or were handed it, whether they have appeared inside bundles before. That needs your own record of what you saw and when, going back months, and it cannot be bought.</p>
+  <p class="body">FINNPUTER has been scanning and storing since early 2026. That archive is the product. <a href="/how/" style="color:var(--green)">Here is exactly how it is read.</a></p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT IT DOES</h2></div>
+  <div class="grid">
+    <div class="card"><h3>Rates wallets</h3>
+      <p class="body" style="font-size:13.5px;margin:0">Early in tokens we watched run, and they closed the trade in profit. Paper gains earn nothing. Bundlers are capped and can never be recommended.</p></div>
+    <div class="card"><h3>Spots agreement</h3>
+      <p class="body" style="font-size:13.5px;margin:0">When several rated wallets, unconnected except by our own rating, buy the same token inside the same window, that is the signal.</p></div>
+    <div class="card"><h3>Then verifies</h3>
+      <p class="body" style="font-size:13.5px;margin:0">Only then does the safety engine run: clusters, snipers, fresh wallets, forwarded supply, holder concentration, liquidity.</p></div>
+    <div class="card"><h3>And writes it down</h3>
+      <p class="body" style="font-size:13.5px;margin:0">Market cap sealed at the moment of the call, peak tracked afterwards. Hits and misses in the same table.</p></div>
+    <div class="card"><h3>Then hands you over</h3>
+      <p class="body" style="font-size:13.5px;margin:0">One tap opens the bot with the trade already set up. Execution stays where your wallet lives. This site never touches a key.</p></div>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>LIVE RIGHT NOW</h2>
+    <p>Refreshes on its own. <a href="/opportunities/" style="color:var(--green)">Full feed</a></p></div>
+  <div class="grid" id="opps"></div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT THE ENGINE KNOWS</h2><p id="coverage"></p></div>
+  <div class="stats" id="stats"></div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>HOW THE PIECES FIT</h2></div>
+  <p class="body">This site is the window. It finds and verifies, it needs no account, and it costs nothing.</p>
+  <p class="body">The <b>Telegram bot</b> is the account. Your wallet lives there, and so does execution. Buy buttons here hand you over with the trade set up.</p>
+  <p class="body"><b>Trading never costs credits</b>, only the trade fee. Credits are for when the AI works for you: research, analysis, and conversation in the bot. You can top up in one tap from the same wallet you trade with.</p>
+  <p class="body">Perps and the launchpad are separate tools, linked from the bot.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT IT WILL NOT DO</h2></div>
+  <p class="body">It does not move your funds. There is no endpoint here that signs, spends or holds a key, and that is a boundary rather than an omission. Buy buttons hand you to the Telegram bot with the trade set up, and nothing happens until you confirm it there.</p>
+  <p class="body">It does not predict. The score says a wallet <b>was</b> early and closed in profit. Whether that repeats is not something anyone knows.</p>
+  <p class="body">It does not pretend to complete coverage. A wallet that made a fortune in tokens FINNPUTER never scanned is invisible here, and a score built on thin evidence is marked as such rather than dressed up. <a href="/how/" style="color:var(--green)">All the limits, written down.</a></p>
+</section>
+
+</div>
+<script src="/assets/core.js"></script>
+<script>
+chrome_("/"); effects();
+
+async function loadOpps(){
+  const box = $("#opps");
+  try{
+    const d = await api("/v1/opportunities?limit=6");
+    box.innerHTML = "";
+    if(!d.opportunities.length){
+      box.append(emptyBox("Nothing converging right now.",
+        "No token is being bought by enough rated wallets at once. This fills itself when it happens."));
+      return;
+    }
+    d.opportunities.forEach(o => box.append(oppCard(o)));
+  }catch(e){
+    box.innerHTML=""; box.append(emptyBox("CORE API not reachable.",
+      "Point the API constant at the top of /assets/core.js at your core service, then reload."));
+  }
+}
+
+const LABELS = {wallets_scored:"WALLETS SCORED", wallets_elite:"AT 80 PLUS",
+  runners_seeded:"RUNNERS WITNESSED", sightings_24h:"BUYS SEEN 24H",
+  opportunities_live:"LIVE NOW", proofs:"CALLS SEALED"};
+async function loadStats(){
+  const box = $("#stats");
+  try{
+    const d = await api("/v1/stats");
+    box.innerHTML="";
+    Object.entries(LABELS).forEach(([k,l]) => {
+      const s = el("div","stat"); s.innerHTML = `<b>0</b><span>${l}</span>`;
+      box.append(s); countUp(s.querySelector("b"), Number(d[k]||0));
+    });
+    const h = await api("/health");
+    $("#coverage").textContent = "Chains covered: " + (h.chains||["solana"]).join(", ")
+      + ". Everything measured by FINNPUTER itself.";
+  }catch(e){ box.innerHTML=""; box.append(emptyBox("Stats unavailable.","")); }
+}
+
+mountCommand(d => {
+  if (d.action === "opportunities"){
+    const box = $("#opps"); box.innerHTML="";
+    if(!d.results.length) box.append(emptyBox("Nothing matched those filters.","Loosen the bounds and run it again."));
+    else d.results.forEach(o => box.append(oppCard(o)));
+    document.querySelectorAll("section")[2].scrollIntoView({behavior:"smooth",block:"start"});
+  } else if (d.action === "smart_money"){
+    location.href = "/smart-money/";
+  }
+});
+
+loadOpps(); loadStats(); setInterval(loadOpps, 60000);
+</script>
+</body>
+</html>

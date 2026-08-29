@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token scan | FINNPUTER CORE</title>
+<meta name="description" content="Scan any Solana token: clusters, snipers, fresh wallets, forwarded supply, holders and liquidity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">TOKEN SCAN</div>
+  <h1>Paste an address.<br>See who is behind it.</h1>
+  <p class="sub">Clusters, snipers, fresh wallets, forwarded supply, holder concentration and liquidity. This page works from day one.</p>
+  <div class="cmd">
+    <input id="mint" autocomplete="off" spellcheck="false" placeholder="Solana mint address">
+    <button id="scan">SCAN</button>
+  </div>
+  <div class="trace" id="trace">
+    <div class="trace-hd"><span class="dot"></span><span id="traceTitle">WORKING</span></div>
+    <div class="trace-body" id="traceBody"></div>
+  </div>
+</header>
+
+<section id="out"></section>
+
+</div>
+
+<script src="/assets/core.js"></script>
+<script>
+chrome_("/token/"); effects();
+
+function row(label, value, cls){
+  return `<div class="bar"><span>${label}</span><i><b style="width:0"></b></i>
+          <u style="${cls||''}">${value}</u></div>`;
+}
+
+function render(r){
+  const out = $("#out"); out.innerHTML = "";
+  if (!r || r.error){ out.append(emptyBox("Scan failed.", r && r.error ? r.error : "Try again in a moment.")); return; }
+
+  const risk = r.risk || {}, mk = r.market || {}, b = r.bundles || {}, rc = r.rugcheck || {};
+  const rs = risk.score;
+  const col = rs == null ? "var(--faint)" : rs >= 50 ? "var(--red)" : rs >= 25 ? "var(--gold)" : "var(--green)";
+
+  const head = el("div","card");
+  head.innerHTML =
+    `<div class="card-top">
+       <div><div class="sym">${r.token_symbol || "???"}</div>
+         <div class="mint">${r.token_name || ""} &middot; ${short(r.mint)}</div></div>
+       <div class="score" style="color:${col}">${rs == null ? "n/a" : rs}<small>RISK</small></div>
+     </div>
+     <div class="meta">
+       ${mk.market_cap ? `<span class="tag">${usd(mk.market_cap)} mcap</span>` : ""}
+       ${mk.liquidity ? `<span class="tag">${usd(mk.liquidity)} liq</span>` : ""}
+       ${risk.level ? `<span class="tag ${rs>=50?"bad":rs>=25?"warn":"good"}">${risk.level}</span>` : ""}
+       ${r.depth ? `<span class="tag">${r.depth} scan</span>` : ""}
+       ${r._cache === "hit" ? `<span class="tag">cached</span>` : ""}
+     </div>`;
+  out.append(head);
+
+  // Wer steckt dahinter
+  const who = el("div","card"); who.style.marginTop = "12px";
+  const measured = b.measured !== false;
+  who.innerHTML = `<h3>Who is behind it</h3>` + (measured ? `
+    <div class="bars" style="margin-top:12px">
+      ${row("clusters", (b.clusters||[]).length)}
+      ${row("bundled supply", (b.bundled_supply_pct ?? 0).toFixed ? (b.bundled_supply_pct).toFixed(1)+"%" : "n/a")}
+      ${row("snipers", b.sniper_count ?? "n/a")}
+      ${row("fresh wallets", b.fresh_wallet_count ?? "n/a")}
+      ${row("forwarded", b.forward_count ?? "n/a")}
+      ${row("forwarded %", b.total_forwarded_pct != null ? b.total_forwarded_pct.toFixed(1)+"%" : "n/a")}
+    </div>` : `
+    <div class="empty" style="margin-top:12px"><b>Not measured.</b>
+      This was a quick scan. Cluster and forward analysis did not run, which is
+      not the same as finding nothing.</div>`);
+  out.append(who);
+
+  // Vertrag
+  const c = r.contract || {}, con = el("div","card"); con.style.marginTop = "12px";
+  const flag = (k,label) => {
+    const v = c[k];
+    if (v === undefined || v === null) return `<span class="tag">${label} unknown</span>`;
+    return v ? `<span class="tag bad">${label} LIVE</span>` : `<span class="tag good">${label} revoked</span>`;
+  };
+  con.innerHTML = `<h3>Contract</h3><div class="meta" style="margin-top:12px">
+      ${flag("mint_authority","mint authority")}
+      ${flag("freeze_authority","freeze authority")}
+      ${rc.lp_locked_pct != null ? `<span class="tag ${rc.lp_locked_pct>=50?"good":"warn"}">LP locked ${rc.lp_locked_pct.toFixed(0)}%</span>` : ""}
+      ${rc.top_holder_pct != null ? `<span class="tag ${rc.top_holder_pct>=20?"warn":""}">top holder ${rc.top_holder_pct.toFixed(1)}%</span>` : ""}
+    </div>`;
+  out.append(con);
+
+  // Smart money auf diesem Token
+  loadBuyers(r.mint, out);
+
+  out.append(handoff(r.mint));
+
+  const links = el("div"); links.style.cssText = "margin-top:18px;font-family:var(--mono);font-size:11px";
+  links.innerHTML = `<a href="https://solscan.io/token/${r.mint}" target="_blank" rel="noopener">Solscan</a>
+    &nbsp;/&nbsp; <a href="https://dexscreener.com/solana/${r.mint}" target="_blank" rel="noopener">Dexscreener</a>
+    &nbsp;/&nbsp; <a href="/how/">How this is measured</a>`;
+  out.append(links);
+}
+
+async function loadBuyers(mint, out){
+  try{
+    const d = await api("/v1/token/" + mint + "/smart-money");
+    if (!d.buyers || !d.buyers.length) return;
+    const box = el("div","card"); box.style.marginTop = "12px";
+    box.innerHTML = `<h3>Rated wallets that bought this</h3>`;
+    const t = el("table","tbl"); t.style.marginTop = "12px";
+    t.innerHTML = `<thead><tr><th>WALLET</th><th>LABEL</th><th class="n">SCORE</th>
+      <th class="n">SOL</th><th class="n">WHEN</th></tr></thead>`;
+    const tb = el("tbody");
+    d.buyers.forEach(w => {
+      const tr = el("tr");
+      tr.innerHTML = `<td><a href="/wallet/?a=${w.wallet}">${short(w.wallet)}</a></td>
+        <td style="color:var(--dim)">${(w.label||"").replace(/_/g," ")}</td>
+        <td class="n" style="font-weight:700">${w.puter_score ?? "n/a"}</td>
+        <td class="n">${(w.sol||0).toFixed(2)}</td>
+        <td class="n" style="color:var(--faint)">${ago(w.bought_at)}</td>`;
+      tb.append(tr);
+    });
+    t.append(tb); box.append(t); out.append(box);
+  }catch(e){}
+}
+
+async function run(mint){
+  mint = (mint||"").trim();
+  if (!mint) return;
+  $("#scan").disabled = true;
+  traceReset("SCANNING");
+  traceAdd("resolving chain from address");
+  traceAdd("running FINNPUTER safety engine");
+  traceAdd("this takes up to 90 seconds on a first scan");
+  try{
+    const r = await api("/v1/scan", {method:"POST", body: JSON.stringify({mint, depth:"deep"})});
+    $("#traceTitle").textContent = "DONE";
+    const d = $("#trace .dot"); if (d) d.style.animation = "none";
+    traceAdd(r._cache === "hit" ? "served from cache" : "scan complete", true);
+    render(r);
+    history.replaceState(null,"","/token/?m="+encodeURIComponent(mint));
+  }catch(e){
+    $("#traceTitle").textContent = "FAILED";
+    render({error:"CORE API did not answer, or that address is not supported."});
+  }
+  $("#scan").disabled = false;
+}
+
+$("#scan").addEventListener("click", () => run($("#mint").value));
+$("#mint").addEventListener("keydown", e => { if (e.key === "Enter") run($("#mint").value); });
+
+const pre = qs("m");
+if (pre){ $("#mint").value = pre; run(pre); }
+</script>
+</body>
+</html>

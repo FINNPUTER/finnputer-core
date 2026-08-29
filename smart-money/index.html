@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart money | FINNPUTER CORE</title>
+<meta name="description" content="Wallets that were early in tokens we watched run, and closed those trades. Bundlers labelled and capped.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">WALLET RANKING</div>
+  <h1>Who is actually<br>good at this.</h1>
+  <p class="sub">Early in tokens we watched run, and they closed the trade. Paper gains earn nothing. Bundlers are labelled and capped at 25, whatever their numbers look like.</p>
+  <div class="cmd">
+    <input id="q" autocomplete="off" spellcheck="false" placeholder="show me the best wallets you know">
+    <button id="go">RUN</button>
+  </div>
+  <div class="trace" id="trace">
+    <div class="trace-hd"><span class="dot"></span><span id="traceTitle">WORKING</span></div>
+    <div class="trace-body" id="traceBody"></div>
+  </div>
+</header>
+
+<section class="reveal">
+  <div class="shead"><h2>RANKING</h2>
+    <p>Sorted by Puter Score. Click a wallet for its full record.</p></div>
+  <div class="scroll" id="box"></div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>COVERAGE</h2><p id="coverage"></p></div>
+  <div class="stats" id="stats"></div>
+</section>
+
+</div>
+<script src="/assets/core.js"></script>
+<script>
+chrome_("/smart-money/"); effects();
+
+function table(rows){
+  const t = el("table","tbl");
+  t.innerHTML = `<thead><tr><th>WALLET</th><th>CHAIN</th><th>LABEL</th><th class="n">SCORE</th>
+    <th class="n">TOKENS</th><th class="n">CLOSED</th><th class="n">WIN RATE</th>
+    <th class="n">NET SOL</th><th class="n">AVG ENTRY</th></tr></thead>`;
+  const tb = el("tbody");
+  rows.forEach(w => {
+    const c = w.puter_score>=85?"var(--green)":w.puter_score>=75?"var(--gold)":"var(--dim)";
+    const tr = el("tr");
+    tr.innerHTML = `<td><a href="/wallet/?a=${w.wallet}">${short(w.wallet)}</a></td>
+      <td style="color:var(--faint)">${w.chain||"solana"}</td>
+      <td style="color:var(--dim)">${(w.label||"").replace(/_/g," ")}</td>
+      <td class="n" style="color:${c};font-weight:700">${w.puter_score}${w.measured===false?'<span style="color:var(--gold)">*</span>':""}</td>
+      <td class="n">${w.winners}</td><td class="n">${w.closed_trades}</td>
+      <td class="n">${w.win_rate==null?"n/a":w.win_rate+"%"}</td>
+      <td class="n" style="color:${(w.net_sol||0)>0?"var(--green)":"var(--red)"}">${(w.net_sol||0).toFixed(1)}</td>
+      <td class="n">${usd(w.avg_entry_mcap)}</td>`;
+    tb.append(tr);
+  });
+  t.append(tb);
+  return t;
+}
+
+function show(rows){
+  const box = $("#box"); box.innerHTML = "";
+  if (!rows.length){
+    box.append(emptyBox("No wallets scored yet.",
+      "The scorer needs one pass over the scan history before anything appears here."));
+    return;
+  }
+  box.append(table(rows));
+  const n = el("div");
+  n.style.cssText = "padding:12px 2px;font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.7";
+  n.innerHTML = '* score based on fewer than two witnessed tokens. Thin evidence, shown rather than hidden. '
+              + '<a href="/how/">How this is measured</a>';
+  box.append(n);
+}
+
+async function load(){
+  try{ const d = await api("/v1/smart-money?min=60&limit=60"); show(d.wallets); }
+  catch(e){ $("#box").innerHTML=""; $("#box").append(emptyBox("CORE API not reachable.","Check the API constant in /assets/core.js.")); }
+}
+
+const LABELS = {wallets_scored:"WALLETS SCORED", wallets_elite:"AT 80 PLUS",
+  runners_seeded:"RUNNERS WITNESSED", wallets_known:"WALLETS SEEN",
+  sightings_24h:"BUYS SEEN 24H", scans_cached:"SCANS CACHED"};
+async function loadStats(){
+  const box = $("#stats");
+  try{
+    const d = await api("/v1/stats");
+    box.innerHTML = "";
+    Object.entries(LABELS).forEach(([k,l]) => {
+      const s = el("div","stat"); s.innerHTML = `<b>0</b><span>${l}</span>`;
+      box.append(s); countUp(s.querySelector("b"), Number(d[k]||0));
+    });
+    const h = await api("/health");
+    $("#coverage").textContent = "Chains covered: " + (h.chains||["solana"]).join(", ")
+      + ". Everything here comes from scans FINNPUTER ran itself. Nothing is bought in.";
+  }catch(e){ box.innerHTML=""; box.append(emptyBox("Stats unavailable.","")); }
+}
+
+mountCommand(d => { if (d.action === "smart_money") show(d.results || []); });
+load(); loadStats();
+</script>
+</body>
+</html>
