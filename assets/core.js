@@ -1,6 +1,6 @@
 /* FINNPUTER CORE - shared script.
    ONE LINE TO CHANGE when you deploy: API below. */
-const API = "https://core-api.finnputerdex.com";
+const API = "https://core-api-production-182c.up.railway.app";
 
 /* Your Telegram bot username, without the @. Used for the handoff links. */
 const BOT = "FinnputerTradeBot";
@@ -34,7 +34,12 @@ function chrome_(active) {
     ["/token/", "Token"], ["/how/", "How it works"],
   ];
   const nav = el("nav");
-  nav.innerHTML = '<a href="/"><b>FINNPUTER</b></a>' + links.slice(1).map(
+  // Mark, if the file exists. Falls back to the wordmark on 404 so a missing
+  // image never leaves a broken icon in the header.
+  const mark = '<a href="/" style="display:flex;align-items:center;gap:0">'
+    + '<img class="mark" src="/assets/mark.png" alt="" '
+    + 'onerror="this.remove()"><b>FINNPUTER</b></a>';
+  nav.innerHTML = mark + links.slice(1).map(
     ([h, t]) => `<a href="${h}"${h === active ? ' class="on"' : ""}>${t}</a>`).join("") +
     '<a href="https://finnputerdex.com">Perps</a>';
   if (active === "/") nav.querySelector("a").classList.add("on");
@@ -207,4 +212,52 @@ function effects() {
     if (en.isIntersecting) { setTimeout(() => en.target.classList.add("in"), i * 90); io.unobserve(en.target); }
   }), { threshold: .08 });
   document.querySelectorAll(".reveal").forEach(n => io.observe(n));
+}
+
+
+/* ---- live ticker -------------------------------------------
+   Fed from real endpoints. If nothing has happened yet it stays hidden:
+   a ticker scrolling zeroes is worse than no ticker at all. */
+async function loadTicker() {
+  const box = document.querySelector("#ticker");
+  if (!box) return;
+  const items = [];
+
+  try {
+    const d = await api("/v1/opportunities?limit=6");
+    (d.opportunities || []).forEach(o => {
+      items.push(`<span><b>${o.wallet_count} wallets</b> converging on `
+        + `${o.symbol || short(o.mint)} &middot; opportunity <u>${o.opportunity}</u></span>`);
+    });
+  } catch (e) {}
+
+  try {
+    const p = await api("/v1/proof");
+    (p.proofs || []).slice(0, 6).forEach(x => {
+      const m = x.multiple || 1;
+      if (m >= 1.2) {
+        items.push(`<span>sealed <b>${x.symbol || short(x.mint)}</b> at `
+          + `${usd(x.mcap_at_call)} &middot; peak <u>${m.toFixed(2)}x</u></span>`);
+      }
+    });
+  } catch (e) {}
+
+  try {
+    const s = await api("/v1/stats");
+    if (s.wallets_scored) {
+      items.push(`<span><b>${s.wallets_scored}</b> wallets scored &middot; `
+        + `<b>${s.wallets_elite || 0}</b> above 80</span>`);
+    }
+    if (s.runners_seeded) {
+      items.push(`<span><b>${s.runners_seeded}</b> runners witnessed and seeded</span>`);
+    }
+  } catch (e) {}
+
+  if (!items.length) return;   // nothing real yet, stay hidden
+
+  const live = '<span class="ticker-live"><span class="dot"></span>LIVE</span>';
+  // Doubled so the marquee loops without a visible seam.
+  document.querySelector("#tickerIn").innerHTML =
+    live + items.join("") + live + items.join("");
+  box.classList.add("on");
 }

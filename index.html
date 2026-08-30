@@ -35,6 +35,22 @@
     <div class="trace-hd"><span class="dot"></span><span id="traceTitle">WORKING</span></div>
     <div class="trace-body" id="traceBody"></div>
   </div>
+
+  <!-- Shows what the engine is doing, from real data. Stays hidden while
+       there is nothing to show, because a ticker scrolling zeroes is worse
+       than no ticker. -->
+  <div class="ticker" id="ticker"><div class="ticker-in" id="tickerIn"></div></div>
+
+  <div class="verbs">
+    <div class="verb"><i>01</i><b>DISCOVER</b>
+      <span>Wallets we rated buy the same token inside one window. No trending list, no volume filter.</span></div>
+    <div class="verb"><i>02</i><b>VERIFY</b>
+      <span>Only then does the safety engine run: clusters, snipers, fresh wallets, forwarded supply.</span></div>
+    <div class="verb"><i>03</i><b>DECIDE</b>
+      <span>One score out of 100, with every component it could not measure named rather than assumed good.</span></div>
+    <div class="verb"><i>04</i><b>PROVE</b>
+      <span>Market cap sealed at the moment of the call. Peak tracked afterwards, hits and misses alike.</span></div>
+  </div>
 </header>
 
 <section class="reveal">
@@ -73,10 +89,63 @@
 
 <section class="reveal">
   <div class="shead"><h2>HOW THE PIECES FIT</h2></div>
-  <p class="body">This site is the window. It finds and verifies, it needs no account, and it costs nothing.</p>
-  <p class="body">The <b>Telegram bot</b> is the account. Your wallet lives there, and so does execution. Buy buttons here hand you over with the trade set up.</p>
-  <p class="body"><b>Trading never costs credits</b>, only the trade fee. Credits are for when the AI works for you: research, analysis, and conversation in the bot. You can top up in one tap from the same wallet you trade with.</p>
-  <p class="body">Perps and the launchpad are separate tools, linked from the bot.</p>
+  <p class="body">Three roles, and knowing which is which saves you looking in the wrong place.</p>
+  <p class="body"><b>This site finds.</b> No account, no cost, nothing to install. It watches wallets and verifies what they buy.</p>
+  <p class="body"><b>The bot executes.</b> Your wallet lives there, and so does your identity. Buy buttons here hand you over with the trade already set up, which is why no endpoint on this site can spend anything.</p>
+  <p class="body"><b>Trading never costs credits</b>, only the trade fee. Credits exist for one reason: when the AI does work for you, that work costs real money to run.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead">
+    <h2>THE REST OF IT</h2>
+    <p>CORE is the front door, not the whole building. Everything below runs today.</p>
+  </div>
+  <div class="eco">
+    <a href="https://t.me/FinnputerTradeBot" target="_blank" rel="noopener">
+      <span class="eco-name">TRADE BOT<span class="eco-tag live">live</span></span>
+      <span class="eco-what">Buy and sell on Telegram. Limit orders, take profit, stop loss, exit coach, copy trading, P&amp;L and tax export. This is where your wallet is.</span>
+      <span class="eco-go">Telegram &rsaquo;</span></a>
+
+    <a href="https://finnputerdex.com" target="_blank" rel="noopener">
+      <span class="eco-name">PERPS<span class="eco-tag live">live</span></span>
+      <span class="eco-what">Perpetual futures, powered by Orderly. Leverage on majors, separate from the microcap side.</span>
+      <span class="eco-go">finnputerdex.com &rsaquo;</span></a>
+
+    <a href="https://launchpad.finnputerdex.com" target="_blank" rel="noopener">
+      <span class="eco-name">LAUNCHPAD<span class="eco-tag live">live</span></span>
+      <span class="eco-what">Launch a token on Solana or Robinhood Chain.</span>
+      <span class="eco-go">launchpad &rsaquo;</span></a>
+
+    <a href="https://stable.finnputerdex.com" target="_blank" rel="noopener">
+      <span class="eco-name">STABLE<span class="eco-tag live">live</span></span>
+      <span class="eco-what">Launch and trade on Stable, the chain where USDT is the gas token.</span>
+      <span class="eco-go">stable &rsaquo;</span></a>
+
+    <a href="https://x402.finnputerdex.com" target="_blank" rel="noopener">
+      <span class="eco-name">AGENT API<span class="eco-tag live">live</span></span>
+      <span class="eco-what">The same safety engine, priced per request in USDC over x402. An AI agent pays and scans without an account, a login or a human in the loop.</span>
+      <span class="eco-go">x402 &rsaquo;</span></a>
+
+    <a href="https://terminal.finnputerdex.com" target="_blank" rel="noopener">
+      <span class="eco-name">TERMINAL<span class="eco-tag live">live</span></span>
+      <span class="eco-what">Browser view of the live feed, for people who would rather not sit in Telegram.</span>
+      <span class="eco-go">terminal &rsaquo;</span></a>
+
+    <a href="https://finnputerpay.xyz" target="_blank" rel="noopener">
+      <span class="eco-name">PAY<span class="eco-tag live">live</span></span>
+      <span class="eco-what">Payment links on Solana. Send one, get paid in any token.</span>
+      <span class="eco-go">finnputerpay.xyz &rsaquo;</span></a>
+
+    <a href="https://hub.finnputerdex.com" target="_blank" rel="noopener">
+      <span class="eco-name">ARCADE</span>
+      <span class="eco-what">Games on Telegram. Not the point of any of this, and deliberately so.</span>
+      <span class="eco-go">hub &rsaquo;</span></a>
+  </div>
+  <p class="body" style="margin-top:20px;font-size:13px">
+    Eight products, one wallet, one fee. The reason they are listed here rather
+    than on the front is that breadth is not the argument. Every competitor has
+    more chains. None of them can tell you who is buying.
+  </p>
 </section>
 
 <section class="reveal">
@@ -137,7 +206,9 @@ mountCommand(d => {
   }
 });
 
-loadOpps(); loadStats(); setInterval(loadOpps, 60000);
+loadOpps(); loadStats(); loadTicker();
+setInterval(loadOpps, 60000);
+setInterval(loadTicker, 120000);
 </script>
 </body>
 </html>

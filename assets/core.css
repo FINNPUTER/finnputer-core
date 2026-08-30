@@ -12,12 +12,19 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);
   -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
 a{color:inherit}
 
+/* Aurora. Deliberately faint: it is a glow at the edges, not a wash over the
+   text. At the previous opacity the whole top half went green and the
+   headline lost its contrast, which is the opposite of what a precision
+   instrument should look like. */
 .aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.aurora i{position:absolute;display:block;border-radius:50%;filter:blur(90px);opacity:.26;
-  animation:drift 24s ease-in-out infinite alternate}
-.aurora i:nth-child(1){width:52vw;height:52vw;left:-12vw;top:-14vw;background:var(--green)}
-.aurora i:nth-child(2){width:40vw;height:40vw;right:-10vw;top:4vw;background:#2b6cff;opacity:.18;animation-duration:30s}
-.aurora i:nth-child(3){width:34vw;height:34vw;left:34vw;top:46vw;background:var(--gold);opacity:.11;animation-duration:36s}
+.aurora i{position:absolute;display:block;border-radius:50%;filter:blur(130px);opacity:.11;
+  animation:drift 26s ease-in-out infinite alternate}
+.aurora i:nth-child(1){width:46vw;height:46vw;left:-18vw;top:-20vw;background:var(--green)}
+.aurora i:nth-child(2){width:34vw;height:34vw;right:-16vw;top:2vw;background:#2b6cff;opacity:.08;animation-duration:32s}
+.aurora i:nth-child(3){width:30vw;height:30vw;left:38vw;top:58vw;background:var(--gold);opacity:.06;animation-duration:38s}
+/* Keeps the centre of the page near black whatever the blobs do. */
+.aurora::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% 30%,#06080d 35%,transparent 100%)}
 @keyframes drift{to{transform:translate3d(6vw,-5vw,0) scale(1.16)}}
 .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.03;
   background-image:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px)}
@@ -41,9 +48,9 @@ header{padding:64px 0 20px}
 header.mid{text-align:center;padding-top:74px}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.30em;color:var(--faint);margin-bottom:18px}
 h1{font-size:clamp(34px,6.4vw,66px);line-height:1;letter-spacing:-.035em;margin:0 0 16px;font-weight:700}
-h1.shine{background:linear-gradient(100deg,#e8eef0 12%,var(--green) 34%,#e8eef0 56%,var(--gold) 74%,#e8eef0 92%);
+h1.shine{background:linear-gradient(100deg,#fff 20%,var(--green) 42%,#fff 64%,var(--green) 84%,#fff 100%);
   background-size:280% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:shine 9s linear infinite}
+  animation:shine 11s linear infinite}
 @keyframes shine{to{background-position:280% 0}}
 .sub{color:var(--dim);font-size:16px;max-width:560px;line-height:1.6;margin:0 0 30px}
 header.mid .sub{margin-left:auto;margin-right:auto}
@@ -159,4 +166,55 @@ footer a:hover{color:var(--green)}
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
   .reveal{opacity:1;transform:none}
+}
+
+/* ── Nav mark ─────────────────────────────────────────────── */
+nav img.mark{height:22px;width:auto;display:block;margin:0 2px 0 8px}
+
+/* ── The four verbs ───────────────────────────────────────── */
+.verbs{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  background:var(--line);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;margin-top:44px;text-align:left}
+.verb{background:var(--panel);padding:20px 18px;position:relative;overflow:hidden;
+  transition:background .25s}
+.verb:hover{background:#0d141d}
+.verb b{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.20em;
+  color:var(--green);margin-bottom:9px;font-weight:500}
+.verb span{display:block;font-size:13.5px;color:var(--dim);line-height:1.6}
+.verb i{position:absolute;top:18px;right:18px;font-family:var(--mono);font-size:10px;
+  color:var(--faint);font-style:normal}
+
+/* ── Live ticker. Hidden until there is something real to show. ── */
+.ticker{display:none;margin-top:26px;border:1px solid var(--line);border-radius:999px;
+  background:rgba(4,7,11,.7);backdrop-filter:blur(10px);overflow:hidden;
+  font-family:var(--mono);font-size:11.5px}
+.ticker.on{display:block}
+.ticker-in{display:flex;align-items:center;gap:26px;padding:11px 18px;white-space:nowrap;
+  animation:slide 34s linear infinite}
+.ticker:hover .ticker-in{animation-play-state:paused}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-in span{color:var(--dim)}
+.ticker-in span b{color:var(--green);font-weight:500}
+.ticker-in span u{text-decoration:none;color:var(--gold)}
+.ticker-live{display:inline-flex;align-items:center;gap:7px;color:var(--faint);
+  letter-spacing:.14em;font-size:10px}
+
+/* ── Ecosystem table ──────────────────────────────────────── */
+.eco{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;margin-top:6px}
+.eco a{display:grid;grid-template-columns:150px 1fr auto;gap:18px;align-items:baseline;
+  background:var(--panel);padding:15px 18px;text-decoration:none;transition:background .2s}
+.eco a:hover{background:#0d141d}
+.eco a:hover .eco-go{color:var(--green)}
+.eco-name{font-family:var(--mono);font-size:12.5px;color:var(--ink);letter-spacing:.04em}
+.eco-what{font-size:13.5px;color:var(--dim);line-height:1.55}
+.eco-go{font-family:var(--mono);font-size:10.5px;color:var(--faint);
+  white-space:nowrap;transition:color .2s}
+.eco-tag{display:inline-block;font-family:var(--mono);font-size:9.5px;
+  border:1px solid var(--line);border-radius:999px;padding:2px 7px;
+  color:var(--faint);margin-left:8px;vertical-align:middle}
+.eco-tag.live{color:var(--green);border-color:rgba(25,232,160,.30)}
+@media (max-width:640px){
+  .eco a{grid-template-columns:1fr;gap:6px}
+  .eco-go{display:none}
 }
