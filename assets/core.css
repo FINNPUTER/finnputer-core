@@ -218,3 +218,46 @@ nav img.mark{height:22px;width:auto;display:block;margin:0 2px 0 8px}
   .eco a{grid-template-columns:1fr;gap:6px}
   .eco-go{display:none}
 }
+
+/* ── Mobile nav ───────────────────────────────────────────────
+   The pill nav ran off the right edge on a phone: the last two links were
+   simply unreachable. Below 720px it becomes a burger that opens a full
+   list, which is the only layout that fits five links plus a mark. */
+.burger{display:none;background:none;border:0;cursor:pointer;padding:7px 12px;
+  font-family:var(--mono);font-size:16px;color:var(--dim);line-height:1}
+.burger:hover{color:var(--ink)}
+@media (max-width:720px){
+  nav{width:auto;margin-left:0;margin-right:0;justify-content:space-between;
+    flex-wrap:wrap;overflow:visible}
+  nav a:not(.always){display:none}
+  nav.open a{display:block;width:100%;text-align:left;padding:11px 14px;
+    border-radius:10px}
+  nav.open{border-radius:20px}
+  .burger{display:block;order:2}
+  nav b{order:1}
+  nav a{order:3}
+}
+
+/* ── Chain marks ──────────────────────────────────────────────
+   A coloured badge by default, replaced by a real logo file the moment one
+   exists at /assets/chains/<chain>.png. Built this way on purpose: hotlinking
+   someone else's CDN means your page breaks when they reorganise, and
+   embedding brand logos you have no licence for is a different problem again.
+   The badge always renders, so nothing is ever missing. */
+.chip{display:inline-flex;align-items:center;gap:6px;vertical-align:middle}
+.chip i{width:15px;height:15px;border-radius:50%;display:inline-block;
+  font-family:var(--mono);font-size:8px;font-weight:700;line-height:15px;
+  text-align:center;color:#04070b;font-style:normal;flex:0 0 auto;
+  background-size:cover;background-position:center}
+.chip span{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.chip.sm i{width:12px;height:12px;font-size:7px;line-height:12px}
+.chip.lg i{width:20px;height:20px;font-size:10px;line-height:20px}
+
+.chip i.c-solana   {background:#9945FF;color:#fff}
+.chip i.c-base     {background:#0052FF;color:#fff}
+.chip i.c-robinhood{background:#00C805;color:#04070b}
+.chip i.c-stable   {background:#1BA27A;color:#fff}
+.chip i.c-ethereum {background:#e8eef0;color:#04070b}
+.chip i.c-unknown  {background:#2a3542;color:var(--dim)}
+
+.chains-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px}

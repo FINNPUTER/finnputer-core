@@ -53,7 +53,7 @@ function table(rows){
     const c = w.puter_score>=85?"var(--green)":w.puter_score>=75?"var(--gold)":"var(--dim)";
     const tr = el("tr");
     tr.innerHTML = `<td><a href="/wallet/?a=${w.wallet}">${short(w.wallet)}</a></td>
-      <td style="color:var(--faint)">${w.chain||"solana"}</td>
+      <td class="chaincell" data-chain="${w.chain||'solana'}"></td>
       <td style="color:var(--dim)">${(w.label||"").replace(/_/g," ")}</td>
       <td class="n" style="color:${c};font-weight:700">${w.puter_score}${w.measured===false?'<span style="color:var(--gold)">*</span>':""}</td>
       <td class="n">${w.winners}</td><td class="n">${w.closed_trades}</td>
@@ -63,14 +63,19 @@ function table(rows){
     tb.append(tr);
   });
   t.append(tb);
+  // Chips after the rows exist, so each cell gets its own element.
+  t.querySelectorAll(".chaincell").forEach(td =>
+    td.append(chainChip(td.dataset.chain, { size: "sm", label: false })));
   return t;
 }
 
 function show(rows){
   const box = $("#box"); box.innerHTML = "";
   if (!rows.length){
-    box.append(emptyBox("No wallets scored yet.",
-      "The scorer needs one pass over the scan history before anything appears here."));
+    box.append(emptyBox("Nothing to rank yet.",
+      "Either no wallets have been scored, or every scored wallet is labelled "
+      + "as a bundler or a gifted position. Those are never ranked, on purpose. "
+      + "The ranking fills as more runners are witnessed."));
     return;
   }
   box.append(table(rows));
@@ -81,8 +86,26 @@ function show(rows){
   box.append(n);
 }
 
+// Starts at 0, not 60. With a young database every wallet can sit below any
+// threshold you pick, and a page that answers "nothing here" while 124 wallets
+// exist is worse than useless: it hides the thing you are trying to inspect.
+let MIN = 0;
+
 async function load(){
-  try{ const d = await api("/v1/smart-money?min=60&limit=60"); show(d.wallets); }
+  try{
+    const d = await api("/v1/smart-money?min=" + MIN + "&limit=100");
+    show(d.wallets);
+    const s = await api("/v1/stats");
+    const known = s.wallets_scored || 0;
+    if (known > (d.wallets || []).length) {
+      const n = el("div");
+      n.style.cssText = "padding:10px 2px;font-family:var(--mono);font-size:11px;color:var(--faint)";
+      n.textContent = `${known} wallets scored in total. `
+        + `${known - d.wallets.length} are hidden because they are labelled as `
+        + `bundlers or as having been handed their position, and those are never ranked.`;
+      $("#box").append(n);
+    }
+  }
   catch(e){ $("#box").innerHTML=""; $("#box").append(emptyBox("CORE API not reachable.","Check the API constant in /assets/core.js.")); }
 }
 
@@ -99,8 +122,15 @@ async function loadStats(){
       box.append(s); countUp(s.querySelector("b"), Number(d[k]||0));
     });
     const h = await api("/health");
-    $("#coverage").textContent = "Chains covered: " + (h.chains||["solana"]).join(", ")
-      + ". Everything here comes from scans FINNPUTER ran itself. Nothing is bought in.";
+    const cov = $("#coverage");
+    cov.textContent = "";
+    const row = el("span", "chains-row");
+    (h.chains || ["solana"]).forEach(c => row.append(chainChip(c, { full: true })));
+    cov.append(row);
+    const note = el("span");
+    note.style.cssText = "display:block;margin-top:10px";
+    note.textContent = "Everything here comes from scans FINNPUTER ran itself. Nothing is bought in.";
+    cov.append(note);
   }catch(e){ box.innerHTML=""; box.append(emptyBox("Stats unavailable.","")); }
 }
 

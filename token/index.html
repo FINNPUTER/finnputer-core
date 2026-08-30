@@ -16,9 +16,9 @@
 <header>
   <div class="eyebrow">TOKEN SCAN</div>
   <h1>Paste an address.<br>See who is behind it.</h1>
-  <p class="sub">Clusters, snipers, fresh wallets, forwarded supply, holder concentration and liquidity. This page works from day one.</p>
+  <p class="sub">Clusters, snipers, fresh wallets, forwarded supply, holder concentration and liquidity. Paste any address: the chain is worked out by asking which one actually trades it, not by guessing from the format.</p>
   <div class="cmd">
-    <input id="mint" autocomplete="off" spellcheck="false" placeholder="Solana mint address">
+    <input id="mint" autocomplete="off" spellcheck="false" placeholder="token address, any chain">
     <button id="scan">SCAN</button>
   </div>
   <div class="trace" id="trace">
@@ -56,6 +56,7 @@ function render(r){
        <div class="score" style="color:${col}">${rs == null ? "n/a" : rs}<small>RISK</small></div>
      </div>
      <div class="meta">
+       <span class="tag chaintag" style="display:inline-flex;align-items:center;padding:3px 9px 3px 5px"></span>
        ${mk.market_cap ? `<span class="tag">${usd(mk.market_cap)} mcap</span>` : ""}
        ${mk.liquidity ? `<span class="tag">${usd(mk.liquidity)} liq</span>` : ""}
        ${risk.level ? `<span class="tag ${rs>=50?"bad":rs>=25?"warn":"good"}">${risk.level}</span>` : ""}
@@ -63,6 +64,19 @@ function render(r){
        ${r._cache === "hit" ? `<span class="tag">cached</span>` : ""}
      </div>`;
   out.append(head);
+  const ct = head.querySelector(".chaintag");
+  if (ct) ct.append(chainChip(r.chain, { size: "sm" }));
+
+  const cr = r.chain_resolution;
+  if (cr && cr.alternatives && cr.alternatives.length){
+    const w = el("div","empty");
+    w.style.cssText = "margin-top:12px;text-align:left;border-color:rgba(255,206,106,.32)";
+    w.innerHTML = `<b>This address exists on more than one chain.</b>`
+      + `Scanned on <b style="display:inline">${r.chain}</b>, the one with the deepest liquidity. `
+      + `Also found on: ${cr.alternatives.join(", ")}. `
+      + `Same address, different token. Make sure you mean this one.`;
+    out.append(w);
+  }
 
   // Wer steckt dahinter
   const who = el("div","card"); who.style.marginTop = "12px";
@@ -136,11 +150,32 @@ async function run(mint){
   if (!mint) return;
   $("#scan").disabled = true;
   traceReset("SCANNING");
-  traceAdd("resolving chain from address");
-  traceAdd("running FINNPUTER safety engine");
-  traceAdd("this takes up to 90 seconds on a first scan");
   try{
-    const r = await api("/v1/scan", {method:"POST", body: JSON.stringify({mint, depth:"deep"})});
+    // Which chain first. An EVM address looks the same everywhere, so this is
+    // asked rather than guessed: scanning the wrong chain returns an empty
+    // report, and an empty report reads like a clean one.
+    traceAdd("asking every chain which one trades this address");
+    let chain = null;
+    try{
+      const res = await api("/v1/resolve?address=" + encodeURIComponent(mint));
+      chain = res.chain;
+      if (res.reason) traceAdd(res.reason);
+      if (res.alternatives && res.alternatives.length){
+        traceAdd("also present on: " + res.alternatives.join(", "), true);
+      }
+      if (!chain){
+        $("#traceTitle").textContent = "STOPPED";
+        const d = $("#trace .dot"); if (d) d.style.animation = "none";
+        render({error: res.reason || "Could not place that address on any chain we cover."});
+        $("#scan").disabled = false;
+        return;
+      }
+    }catch(e){ traceAdd("chain lookup unavailable, letting the scanner decide"); }
+
+    traceAdd("running FINNPUTER safety engine");
+    traceAdd("this takes up to 90 seconds on a first scan");
+    const body = chain ? {mint, depth:"deep", chain} : {mint, depth:"deep"};
+    const r = await api("/v1/scan", {method:"POST", body: JSON.stringify(body)});
     $("#traceTitle").textContent = "DONE";
     const d = $("#trace .dot"); if (d) d.style.animation = "none";
     traceAdd(r._cache === "hit" ? "served from cache" : "scan complete", true);

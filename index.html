@@ -190,8 +190,11 @@ async function loadStats(){
       box.append(s); countUp(s.querySelector("b"), Number(d[k]||0));
     });
     const h = await api("/health");
-    $("#coverage").textContent = "Chains covered: " + (h.chains||["solana"]).join(", ")
-      + ". Everything measured by FINNPUTER itself.";
+    const cov = $("#coverage");
+    cov.textContent = "";
+    const row = el("span", "chains-row");
+    (h.chains || ["solana"]).forEach(c => row.append(chainChip(c, { full: true })));
+    cov.append(row);
   }catch(e){ box.innerHTML=""; box.append(emptyBox("Stats unavailable.","")); }
 }
 

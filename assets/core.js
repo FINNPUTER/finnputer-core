@@ -43,6 +43,21 @@ function chrome_(active) {
     ([h, t]) => `<a href="${h}"${h === active ? ' class="on"' : ""}>${t}</a>`).join("") +
     '<a href="https://finnputerdex.com">Perps</a>';
   if (active === "/") nav.querySelector("a").classList.add("on");
+
+  // The mark link stays visible at every width; everything else collapses
+  // behind the burger on a phone.
+  nav.querySelector("a").classList.add("always");
+
+  const burger = el("button", "burger");
+  burger.type = "button";
+  burger.setAttribute("aria-label", "Menu");
+  burger.textContent = "\u2261";
+  burger.addEventListener("click", () => {
+    const open = nav.classList.toggle("open");
+    burger.textContent = open ? "\u00d7" : "\u2261";
+  });
+  nav.insertBefore(burger, nav.children[1]);
+
   $(".wrap").prepend(nav);
 
   const f = el("footer");
@@ -51,6 +66,39 @@ function chrome_(active) {
     '<a href="https://x402.finnputerdex.com">Agent API</a> / ' +
     '<a href="https://hub.finnputerdex.com">Ecosystem</a></span>';
   $(".wrap").appendChild(f);
+}
+
+/* ---- chain marks -------------------------------------------
+   Badge first, real logo if one has been dropped in. The image sits ON the
+   badge, so a missing file leaves the badge rather than a broken icon. */
+const CHAIN_LABEL = { solana: "SOL", base: "BASE", robinhood: "RH",
+                      stable: "USDT", ethereum: "ETH" };
+const CHAIN_NAME  = { solana: "Solana", base: "Base", robinhood: "Robinhood",
+                      stable: "Stable", ethereum: "Ethereum" };
+
+function chainChip(chain, opts) {
+  const c = (chain || "solana").toLowerCase();
+  const known = CHAIN_LABEL[c] !== undefined;
+  const o = opts || {};
+  const wrap = el("span", "chip" + (o.size ? " " + o.size : ""));
+  const dot = el("i", "c-" + (known ? c : "unknown"));
+  dot.textContent = known ? CHAIN_LABEL[c].slice(0, 2) : "?";
+
+  // Try the real logo. If it is not there, the badge stays as it is.
+  const probe = new Image();
+  probe.onload = () => {
+    dot.style.backgroundImage = `url(/assets/chains/${c}.png)`;
+    dot.textContent = "";
+  };
+  probe.src = `/assets/chains/${c}.png`;
+
+  wrap.append(dot);
+  if (o.label !== false) {
+    const t = el("span");
+    t.textContent = o.full ? (CHAIN_NAME[c] || c) : (CHAIN_LABEL[c] || c);
+    wrap.append(t);
+  }
+  return wrap;
 }
 
 /* ---- shared renderers -------------------------------------- */
@@ -94,7 +142,12 @@ function oppCard(o) {
 
   const meta = el("div", "meta");
   const add = (t, cls) => { const s = el("span", "tag" + (cls ? " " + cls : "")); s.textContent = t; meta.append(s); };
-  if (o.chain && o.chain !== "solana") add(o.chain);
+  // Always shown, including Solana. Once four chains are live, "no chain
+  // mark" is ambiguous rather than implied.
+  const cw = el("span", "tag");
+  cw.style.cssText = "display:inline-flex;align-items:center;padding:3px 9px 3px 5px";
+  cw.append(chainChip(o.chain, { size: "sm" }));
+  meta.append(cw);
   add(`${o.wallet_count} wallets`, "good");
   add(`avg score ${o.avg_wallet_score}`);
   if (o.market_cap) add(usd(o.market_cap));
