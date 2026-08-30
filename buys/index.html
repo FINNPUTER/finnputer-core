@@ -48,14 +48,10 @@
 let HOURS = 24;
 let MIN = 0;
 
-function ago(ts){
-  if(!ts) return "";
-  const s = Math.floor(Date.now()/1000) - ts;
-  if(s < 60) return s + "s ago";
-  if(s < 3600) return Math.floor(s/60) + "m ago";
-  if(s < 86400) return Math.floor(s/3600) + "h ago";
-  return Math.floor(s/86400) + "d ago";
-}
+// ago() comes from core.js. Redeclaring it here threw
+// "Identifier 'ago' has already been declared", which aborts the ENTIRE
+// script block before a single line runs. That is why the page rendered
+// black rather than showing an error: nothing executed at all.
 
 function scoreTag(v){
   const t = el("span","tag");
@@ -67,7 +63,7 @@ function scoreTag(v){
 }
 
 function buildFilters(){
-  const box = $("#filters");
+  const box = document.querySelector("#filters");
   box.innerHTML = "";
   box.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px";
   [[6,"6h"],[24,"24h"],[48,"48h"],[168,"7d"]].forEach(([h,label])=>{
@@ -86,7 +82,7 @@ function buildFilters(){
 }
 
 async function loadGrouped(){
-  const box = $("#grouped");
+  const box = document.querySelector("#grouped");
   box.innerHTML = "";
   try{
     const d = await api(`/v1/buys/tokens?hours=${HOURS}&min=${MIN}&limit=20`);
@@ -138,7 +134,7 @@ async function loadGrouped(){
 }
 
 async function loadFeed(){
-  const box = $("#feed");
+  const box = document.querySelector("#feed");
   box.innerHTML = "";
   try{
     const d = await api(`/v1/buys?hours=${HOURS}&min=${MIN}&limit=80`);
@@ -174,12 +170,12 @@ async function loadFeed(){
 }
 
 async function loadWatchlist(){
-  const box = $("#watchlist");
+  const box = document.querySelector("#watchlist");
   box.innerHTML = "";
   try{
     const d = await api("/v1/watchlist?limit=60");
     const rows = d.wallets || [];
-    $("#wl-sub").textContent =
+    document.querySelector("#wl-sub").textContent =
       `Wallets scoring ${d.threshold} or above are followed. `
       + `Everything below is scored but not watched, which is why an empty `
       + `list here means an empty feed above.`;
