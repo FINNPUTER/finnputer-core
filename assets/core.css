@@ -261,3 +261,13 @@ nav img.mark{height:22px;width:auto;display:block;margin:0 2px 0 8px}
 .chip i.c-unknown  {background:#2a3542;color:var(--dim)}
 
 .chains-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px}
+
+/* ── Filter buttons ───────────────────────────────────────────
+   Named .filt, not .chip: .chip is the chain badge, and reusing the class
+   would make one restyle the other by accident. */
+.filt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  background:var(--panel);color:var(--dim);border:1px solid var(--line);
+  border-radius:999px;padding:7px 14px;cursor:pointer;transition:all .18s}
+.filt:hover{color:var(--ink);border-color:rgba(25,232,160,.3)}
+.filt.on{color:var(--green);border-color:rgba(25,232,160,.45);
+  background:rgba(25,232,160,.07)}

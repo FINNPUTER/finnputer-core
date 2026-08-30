@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live buys · FINNPUTER CORE</title>
+<meta name="description" content="Every buy by a wallet FINNPUTER rates, as it happens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+</head>
+<body>
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="wrap">
+
+  <section class="reveal">
+    <div class="shead">
+      <h2>LIVE BUYS</h2>
+      <p>Every purchase by a wallet CORE rates highly enough to watch. Not
+         filtered, not ranked, not waiting for agreement: this is the raw
+         feed the opportunity signals are built on.</p>
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <div id="grouped"></div>
+
+    <div class="shead" style="margin-top:44px">
+      <h2>EVERY BUY</h2>
+      <p>Newest first. The same token appearing several times is the point,
+         so nothing is collapsed.</p>
+    </div>
+    <div id="feed"></div>
+  </section>
+
+  <section class="reveal">
+    <div class="shead">
+      <h2>WHO IS BEING WATCHED</h2>
+      <p id="wl-sub">The wallets above the threshold. Everything else is
+         scored but not followed.</p>
+    </div>
+    <div id="watchlist"></div>
+  </section>
+
+</div>
+<script src="/assets/core.js"></script>
+<script>
+let HOURS = 24;
+let MIN = 0;
+
+function ago(ts){
+  if(!ts) return "";
+  const s = Math.floor(Date.now()/1000) - ts;
+  if(s < 60) return s + "s ago";
+  if(s < 3600) return Math.floor(s/60) + "m ago";
+  if(s < 86400) return Math.floor(s/3600) + "h ago";
+  return Math.floor(s/86400) + "d ago";
+}
+
+function scoreTag(v){
+  const t = el("span","tag");
+  const n = Number(v || 0);
+  if(n >= 70) t.classList.add("good");
+  else if(n < 40) t.classList.add("warn");
+  t.textContent = "score " + (v == null ? "?" : Math.round(n));
+  return t;
+}
+
+function buildFilters(){
+  const box = $("#filters");
+  box.innerHTML = "";
+  box.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px";
+  [[6,"6h"],[24,"24h"],[48,"48h"],[168,"7d"]].forEach(([h,label])=>{
+    const b = el("button","filt" + (h===HOURS ? " on" : ""));
+    b.textContent = label;
+    b.onclick = () => { HOURS = h; buildFilters(); loadAll(); };
+    box.append(b);
+  });
+  const sep = el("span"); sep.style.cssText="width:14px"; box.append(sep);
+  [[0,"all scored"],[40,"40+"],[60,"60+"]].forEach(([m,label])=>{
+    const b = el("button","filt" + (m===MIN ? " on" : ""));
+    b.textContent = label;
+    b.onclick = () => { MIN = m; buildFilters(); loadAll(); };
+    box.append(b);
+  });
+}
+
+async function loadGrouped(){
+  const box = $("#grouped");
+  box.innerHTML = "";
+  try{
+    const d = await api(`/v1/buys/tokens?hours=${HOURS}&min=${MIN}&limit=20`);
+    const rows = d.tokens || [];
+    if(!rows.length){
+      box.append(emptyBox("No watched wallet has bought anything yet.",
+        "Either the watchlist is empty, or nobody on it has traded in this "
+        + "window. Check WHO IS BEING WATCHED below."));
+      return;
+    }
+    rows.forEach(t=>{
+      const c = el("div","card");
+      const head = el("div","card-hd");
+      const left = el("div");
+      const h = el("h3");
+      h.textContent = short(t.mint);
+      left.append(h);
+      const meta = el("div","meta");
+      const cw = el("span","tag");
+      cw.style.cssText = "display:inline-flex;align-items:center;padding:3px 9px 3px 5px";
+      cw.append(chainChip(t.chain, {size:"sm"}));
+      meta.append(cw);
+      const w = el("span","tag good");
+      w.textContent = t.wallets + (t.wallets === 1 ? " wallet" : " wallets");
+      meta.append(w);
+      meta.append(scoreTag(t.best_score));
+      if(t.total_sol){
+        const s = el("span","tag");
+        s.textContent = Number(t.total_sol).toFixed(2) + " SOL in";
+        meta.append(s);
+      }
+      const when = el("span","tag");
+      when.textContent = ago(t.last_buy);
+      meta.append(when);
+      left.append(meta);
+      head.append(left);
+
+      c.append(head);
+      // handoff() already exists and carries the "nothing is bought until you
+      // confirm in the bot" note with it. Reusing it rather than inventing a
+      // second set of buttons that would drift from it.
+      c.append(handoff(t.mint, [0.1, 0.5]));
+      box.append(c);
+    });
+  }catch(e){
+    box.append(emptyBox("CORE API not reachable.",
+      "Check the API constant in /assets/core.js."));
+  }
+}
+
+async function loadFeed(){
+  const box = $("#feed");
+  box.innerHTML = "";
+  try{
+    const d = await api(`/v1/buys?hours=${HOURS}&min=${MIN}&limit=80`);
+    const rows = d.buys || [];
+    if(!rows.length){
+      box.append(emptyBox("Nothing seen in this window.", ""));
+      return;
+    }
+    const t = el("table","tbl");
+    t.innerHTML = `<thead><tr>
+      <th>When</th><th>Wallet</th><th>Score</th><th>Label</th>
+      <th>Token</th><th>Chain</th><th class="r">Size</th></tr></thead>`;
+    const tb = el("tbody");
+    rows.forEach(b=>{
+      const tr = el("tr");
+      tr.innerHTML = `
+        <td style="color:var(--faint)">${ago(b.bought_at)}</td>
+        <td><a href="/wallet/?a=${b.wallet}">${short(b.wallet)}</a></td>
+        <td><b>${b.puter_score == null ? "?" : Math.round(b.puter_score)}</b></td>
+        <td style="color:var(--dim)">${(b.label || "").replace(/_/g, " ")}</td>
+        <td><a href="/token/?m=${b.mint}">${short(b.mint)}</a></td>
+        <td class="chaincell" data-chain="${b.chain || 'solana'}"></td>
+        <td class="r">${b.sol ? Number(b.sol).toFixed(3) + " SOL" : "-"}</td>`;
+      tb.append(tr);
+    });
+    t.append(tb);
+    t.querySelectorAll(".chaincell").forEach(td =>
+      td.append(chainChip(td.dataset.chain, {size:"sm", label:false})));
+    box.append(t);
+  }catch(e){
+    box.append(emptyBox("CORE API not reachable.", ""));
+  }
+}
+
+async function loadWatchlist(){
+  const box = $("#watchlist");
+  box.innerHTML = "";
+  try{
+    const d = await api("/v1/watchlist?limit=60");
+    const rows = d.wallets || [];
+    $("#wl-sub").textContent =
+      `Wallets scoring ${d.threshold} or above are followed. `
+      + `Everything below is scored but not watched, which is why an empty `
+      + `list here means an empty feed above.`;
+    if(!rows.length){
+      box.append(emptyBox(`No wallet reaches ${d.threshold} yet.`,
+        "Nothing is being followed, so no buys can be seen. The threshold "
+        + "is CONV_MIN_SCORE on the scorer service."));
+      return;
+    }
+    const t = el("table","tbl");
+    t.innerHTML = `<thead><tr>
+      <th>Wallet</th><th>Score</th><th>Label</th>
+      <th class="r">Tokens</th><th class="r">Wins</th>
+      <th class="r">Net</th></tr></thead>`;
+    const tb = el("tbody");
+    rows.forEach(w=>{
+      const tr = el("tr");
+      const closed = w.closed_trades || 0;
+      tr.innerHTML = `
+        <td><a href="/wallet/?a=${w.wallet}">${short(w.wallet)}</a></td>
+        <td><b>${Math.round(w.puter_score || 0)}</b></td>
+        <td style="color:var(--dim)">${(w.label || "").replace(/_/g, " ")}</td>
+        <td class="r">${w.tokens_seen || 0}</td>
+        <td class="r">${closed ? `${w.wins || 0}/${closed}` : "-"}</td>
+        <td class="r">${w.net_sol ? Number(w.net_sol).toFixed(1) + " SOL" : "-"}</td>`;
+      tb.append(tr);
+    });
+    t.append(tb);
+    box.append(t);
+  }catch(e){
+    box.append(emptyBox("CORE API not reachable.", ""));
+  }
+}
+
+function loadAll(){ loadGrouped(); loadFeed(); }
+
+buildFilters();
+loadAll();
+loadWatchlist();
+setInterval(loadAll, 45000);
+</script>
+</body>
+</html>
