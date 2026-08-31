@@ -103,7 +103,12 @@ function runRow(r){
   const arc = el("div","run-arc");
   const from = r.first_mcap ? usd(r.first_mcap) : "?";
   const to = r.peak_mcap ? usd(r.peak_mcap) : "?";
-  arc.innerHTML = `first seen at <b>${from}</b> &rsaquo; peaked <b>${to}</b>`;
+  // When, not just how much. A market cap with no date proves nothing about
+  // whether we were early, which is the only claim this page makes.
+  const seen = r.first_scan_at ? ago(r.first_scan_at) + " ago" : null;
+  arc.innerHTML = `first seen <b>${from}</b>`
+    + (seen ? ` <span style="color:var(--faint)">(${seen})</span>` : "")
+    + ` &rsaquo; peaked <b>${to}</b>`;
   if (r.wallets_seeded) {
     arc.innerHTML += `<br><span style="color:var(--faint);font-size:12px">`
       + `${r.wallets_seeded} early buyers recorded and scored</span>`;

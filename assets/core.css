@@ -227,15 +227,33 @@ nav img.mark{height:22px;width:auto;display:block;margin:0 2px 0 8px}
   font-family:var(--mono);font-size:16px;color:var(--dim);line-height:1}
 .burger:hover{color:var(--ink)}
 @media (max-width:720px){
-  nav{width:auto;margin-left:0;margin-right:0;justify-content:space-between;
-    flex-wrap:wrap;overflow:visible}
-  nav a:not(.always){display:none}
-  nav.open a{display:block;width:100%;text-align:left;padding:11px 14px;
-    border-radius:10px}
-  nav.open{border-radius:20px}
-  .burger{display:block;order:2}
-  nav b{order:1}
+  /* Brand left, burger right.
+     It was the other way round, which is backwards from every app a phone
+     user has open, so the first thing they do is look in the wrong corner.
+     The closed bar is a single row; opening it turns the pill into a panel
+     with the links stacked and separated, rather than a list squeezed into
+     a rounded strip. */
+  nav{width:auto;margin:0;justify-content:space-between;flex-wrap:wrap;
+    overflow:visible;padding:10px 14px}
+  /* The brand is an <a class="always">, not a <b>: styling nav b did nothing
+     and left the burger sitting on the left with the brand beside it. */
+  nav a.always{order:1;margin-right:auto;display:block}
+  .burger{display:block;order:2;font-size:22px;line-height:1;
+    padding:4px 6px;background:none;border:0;color:var(--ink);cursor:pointer}
   nav a{order:3}
+  nav a:not(.always){display:none}
+
+  nav.open{border-radius:16px;padding-bottom:8px}
+  nav.open a{display:block;width:100%;text-align:left;
+    padding:13px 12px;border-radius:10px;font-size:15px;
+    border-top:1px solid var(--line)}
+  nav.open a:first-of-type{margin-top:8px}
+  /* The brand stays a plain title inside an open menu, not another row. */
+  nav.open a.always{border-top:0;margin-top:0;padding-left:0;
+    font-size:15px;width:auto}
+  /* The page underneath keeps scrolling past an open menu otherwise, so the
+     menu slides away under the finger while it is being read. */
+  nav.open{position:relative;z-index:40}
 }
 
 /* ── Chain marks ──────────────────────────────────────────────
@@ -253,12 +271,17 @@ nav img.mark{height:22px;width:auto;display:block;margin:0 2px 0 8px}
 .chip.sm i{width:12px;height:12px;font-size:7px;line-height:12px}
 .chip.lg i{width:20px;height:20px;font-size:10px;line-height:20px}
 
-.chip i.c-solana   {background:#9945FF;color:#fff}
-.chip i.c-base     {background:#0052FF;color:#fff}
-.chip i.c-robinhood{background:#00C805;color:#04070b}
-.chip i.c-stable   {background:#1BA27A;color:#fff}
-.chip i.c-ethereum {background:#e8eef0;color:#04070b}
-.chip i.c-unknown  {background:#2a3542;color:var(--dim)}
+/* background-color, NOT background.
+   The shorthand resets background-image, and since these rules come after
+   the .chip i block they were wiping out the logo the moment it loaded. The
+   colour is only the fallback for a logo that is missing or still in
+   flight; it must not erase the one that arrived. */
+.chip i.c-solana   {background-color:#9945FF;color:#fff}
+.chip i.c-base     {background-color:#0052FF;color:#fff}
+.chip i.c-robinhood{background-color:#00C805;color:#04070b}
+.chip i.c-stable   {background-color:#1BA27A;color:#fff}
+.chip i.c-ethereum {background-color:#e8eef0;color:#04070b}
+.chip i.c-unknown  {background-color:#2a3542;color:var(--dim)}
 
 .chains-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px}
 
