@@ -122,6 +122,30 @@ function runRow(r){
   const x = el("div","run-x");
   x.innerHTML = `${Number(r.multiple || 0).toFixed(1)}x<small>PEAK</small>`;
   d.append(x);
+
+  // A way in.
+  //
+  // The rows had no buttons at all, so somebody looking at a 158x had
+  // nowhere to go: the page proved something and then dropped them. Scan is
+  // the right first action here rather than buy, because the run already
+  // happened and what is worth looking at is who was in it.
+  const act = el("div");
+  act.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;width:100%;"
+    + "margin-top:12px;padding-top:12px;border-top:1px solid var(--line)";
+  // Class "hint", the same one handoff() uses. There is no .btn in core.css,
+  // so the earlier guess would have rendered two unstyled links.
+  const scan = el("a","hint");
+  scan.href = tgScan(r.mint);
+  scan.target = "_blank"; scan.rel = "noopener";
+  scan.style.textDecoration = "none";
+  scan.textContent = "Scan the buyers in bot";
+  act.append(scan);
+  const page = el("a","hint");
+  page.href = `/token/?m=${r.mint}`;
+  page.style.textDecoration = "none";
+  page.textContent = "Open the scan";
+  act.append(page);
+  d.append(act);
   return d;
 }
 
