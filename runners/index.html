@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The record · FINNPUTER CORE</title>
+<title>Runners · FINNPUTER CORE</title>
 <meta name="description" content="Tokens that ran, and what we recorded while they did.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +38,7 @@
 
   <section class="reveal">
     <div class="shead">
-      <h2>THE RECORD</h2>
+      <h2>RUNNERS</h2>
       <p>Tokens that ran, and what was recorded while they did. Every number
          below is measured: the market cap when a scan first saw it, the peak
          it reached, and how many of its early buyers are now scored.</p>
@@ -109,10 +109,14 @@ function runRow(r){
   arc.innerHTML = `first seen <b>${from}</b>`
     + (seen ? ` <span style="color:var(--faint)">(${seen})</span>` : "")
     + ` &rsaquo; peaked <b>${to}</b>`;
-  if (r.wallets_seeded) {
-    arc.innerHTML += `<br><span style="color:var(--faint);font-size:12px">`
-      + `${r.wallets_seeded} early buyers recorded and scored</span>`;
-  }
+  // Say when the buyers have not been read yet, rather than leaving the line
+  // out. A missing line looks like "no buyers found", which is a finding;
+  // "not read yet" is the truth and it is a different thing entirely.
+  arc.innerHTML += `<br><span style="color:var(--faint);font-size:12px">`
+    + (r.wallets_seeded
+        ? `${r.wallets_seeded} early buyers recorded and scored`
+        : `early buyers not read yet`)
+    + `</span>`;
   d.append(arc);
 
   const x = el("div","run-x");

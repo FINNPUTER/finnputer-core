@@ -30,7 +30,7 @@ function chrome_(active) {
   document.body.insertAdjacentHTML("afterbegin",
     '<div class="aurora"><i></i><i></i><i></i></div><div class="grain"></div>');
   const links = [
-    ["/", "Home"], ["/opportunities/", "Signals"], ["/runners/", "The record"],
+    ["/", "Home"], ["/opportunities/", "Signals"], ["/runners/", "Runners"],
     ["/buys/", "Live buys"],
     ["/smart-money/", "Smart money"],
     ["/token/", "Token"], ["/how/", "How it works"],
