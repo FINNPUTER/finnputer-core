@@ -45,6 +45,11 @@
 </div>
 <script src="/assets/core.js"></script>
 <script>
+// The nav and the reveal animation. Without these the page renders its
+// content at opacity 0 and shows nothing at all: not an error, not an empty
+// state, just black. Every other page calls them; these two did not.
+chrome_("/buys/"); effects();
+
 let HOURS = 24;
 let MIN = 0;
 

@@ -81,10 +81,102 @@ def main() -> int:
         if dashes:
             failures += 1
 
+    # ── the runtime check ────────────────────────────────────
+    #
+    # Everything above is static analysis, and it passed on a page that
+    # rendered completely black. The cause was invisible to a parser: /buys/
+    # never called chrome_() and effects(), so its sections stayed at the
+    # opacity 0 that the reveal animation starts from and nothing ever set
+    # them to 1. No error, no empty state, just black.
+    #
+    # A parser cannot see that. A browser can, so this loads each page in one
+    # and asks whether anything is actually visible.
+    failures += _browser_check()
+
     print()
     print("all pages parse" if not failures
           else f"{failures} page(s) would fail in a browser")
     return 0 if failures == 0 else 1
+
+
+def _browser_check() -> int:
+    """Load every page and check that something is visible. Needs playwright."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print()
+        print("[skip] playwright not installed, runtime check skipped")
+        print("       pip install playwright && playwright install chromium")
+        return 0
+
+    import http.server
+    import socketserver
+    import threading
+
+    os.chdir(HERE)
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+    srv = socketserver.TCPServer(("", 0), Quiet)
+    port = srv.server_address[1]
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+    pages = sorted(os.path.dirname(p) or "/" for p in
+                   [os.path.relpath(x, HERE) for x in
+                    glob.glob(os.path.join(HERE, "**", "index.html"),
+                              recursive=True)])
+    bad = 0
+    print()
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch()
+            page = browser.new_page()
+            for rel in pages:
+                route = "/" if rel == "/" else f"/{rel}/"
+                errs = []
+                page.on("pageerror", lambda e: errs.append(str(e)[:90]))
+                page.goto(f"http://localhost:{port}{route}",
+                          wait_until="load", timeout=20000)
+                page.wait_for_timeout(800)
+                # Scroll the way a reader does. The reveal animation is tied
+                # to an IntersectionObserver, so a section below the fold is
+                # SUPPOSED to sit at opacity 0 until it is scrolled to.
+                # Checking without scrolling reports a working page as broken.
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(1200)
+
+                text = page.inner_text("body").strip()
+                # The specific trap: content present in the DOM but every
+                # section still at opacity 0, which looks identical to a
+                # broken page.
+                ops = page.eval_on_selector_all(
+                    ".reveal", "e => e.map(x => getComputedStyle(x).opacity)")
+                visible = (not ops) or any(float(o) > 0 for o in ops)
+                nav = page.evaluate("!!document.querySelector('nav,.nav,header')")
+
+                problems = []
+                if errs:
+                    problems.append(f"js error: {errs[0]}")
+                if not text:
+                    problems.append("renders no text at all")
+                if not visible:
+                    problems.append("every section stuck at opacity 0")
+                if not nav:
+                    problems.append("no nav, chrome_() probably not called")
+
+                if problems:
+                    print(f"FAIL {route:22} {'; '.join(problems)}")
+                    bad += 1
+                else:
+                    print(f"OK   {route:22} renders")
+            browser.close()
+    except Exception as e:
+        print(f"[skip] runtime check could not run: {str(e)[:80]}")
+    finally:
+        srv.shutdown()
+    return bad
 
 
 if __name__ == "__main__":
