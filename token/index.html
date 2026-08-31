@@ -95,6 +95,82 @@ function render(r){
       not the same as finding nothing.</div>`);
   out.append(who);
 
+  // Die Cluster selbst, mit Adressen.
+  //
+  // The page used to show only counts: "clusters 2". The bot showed the
+  // actual wallets with timestamps and explorer links, and the bot is the
+  // surface nobody can link to. This is the one that gets forwarded, so this
+  // is where the evidence belongs. A number is a claim; an address with a
+  // timestamp is something the reader can go and check.
+  const clusters = b.clusters || [];
+  if (measured && clusters.length) {
+    const cl = el("div","card"); cl.style.marginTop = "12px";
+    let html = `<h3>The clusters</h3>
+      <p class="body" style="font-size:13px;margin:8px 0 0">
+        Wallets that bought within the same window and were funded from the
+        same place. Every address links to the explorer.</p>`;
+    clusters.slice(0, 6).forEach((c, i) => {
+      const wallets = (c.wallets || []).map(w =>
+        typeof w === "string" ? w : (w.address || w.wallet)).filter(Boolean);
+      const pct = c.supply_pct != null ? c.supply_pct : c.pct;
+      const when = c.slot_time || c.seen_at || c.time;
+      html += `<div style="margin-top:16px">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--ink)">
+          Cluster ${i + 1} · ${c.wallet_count || wallets.length} wallets`
+        + (pct != null ? ` · ${Number(pct).toFixed(1)}% supply` : "")
+        + (when ? ` · ${when}` : "") + `</div>`;
+      wallets.slice(0, 8).forEach(w => {
+        html += `<div style="font-family:var(--mono);font-size:12px;
+                    color:var(--dim);padding-left:14px;margin-top:3px">
+          └ <a href="${scanLink(w, r.chain || "solana")}"
+               target="_blank" rel="noopener">${short(w)}</a></div>`;
+      });
+      if (wallets.length > 8) {
+        html += `<div style="font-family:var(--mono);font-size:12px;
+                    color:var(--faint);padding-left:14px">
+          └ +${wallets.length - 8} more</div>`;
+      }
+      // The funder is the part a cluster count cannot carry: three wallets
+      // sharing one source is a different fact from three wallets.
+      if (c.funder) {
+        html += `<div style="font-family:var(--mono);font-size:11px;
+                    color:var(--faint);padding-left:14px;margin-top:4px">
+          └ funded by <a href="${scanLink(c.funder, r.chain || "solana")}"
+               target="_blank" rel="noopener">${short(c.funder)}</a></div>`;
+      }
+      html += `</div>`;
+    });
+    if (clusters.length > 6) {
+      html += `<p class="body" style="font-size:12px;margin-top:14px">
+        ${clusters.length - 6} more clusters not shown.</p>`;
+    }
+    cl.innerHTML = html;
+    out.append(cl);
+  }
+
+  // Woher das Geld kam.
+  //
+  // The strongest thing this scanner produces and the hardest for anyone to
+  // copy: it needs months of scans in an archive. A cluster says three
+  // wallets share a funder; this says what else that funder has paid for.
+  const fh = r.funder_history || [];
+  if (fh.length) {
+    const fc = el("div","card"); fc.style.marginTop = "12px";
+    let html = `<h3>Where the money came from</h3>`;
+    fh.slice(0, 4).forEach(f => {
+      html += `<div style="margin-top:14px">
+        <div style="font-family:var(--mono);font-size:12px">
+          <a href="${scanLink(f.funder, r.chain || "solana")}"
+             target="_blank" rel="noopener">${short(f.funder)}</a>
+          <span style="color:var(--dim)"> funded ${f.wallets_here || "?"}
+          wallets here</span></div>
+        <div class="body" style="font-size:13px;margin-top:4px;
+             padding-left:14px">${f.verdict || ""}</div></div>`;
+    });
+    fc.innerHTML = html;
+    out.append(fc);
+  }
+
   // Vertrag
   const c = r.contract || {}, con = el("div","card"); con.style.marginTop = "12px";
   const flag = (k,label) => {
