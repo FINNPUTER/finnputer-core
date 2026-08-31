@@ -151,6 +151,11 @@
     message and a wallet held elsewhere has no Telegram account attached to
     it. It is checked when the signal fires, not cached.
   </p>
+
+  <div class="card" id="burnbox" style="margin-top:18px;display:none">
+    <h3>BOUGHT BACK AND BURNED</h3>
+    <p class="body" style="margin:10px 0 0" id="burntext"></p>
+  </div>
 </section>
 
 <section class="reveal">
@@ -217,6 +222,27 @@
 <script src="/assets/core.js"></script>
 <script>
 chrome_("/"); effects();
+
+// Burn totals.
+//
+// The mechanism has existed for months and nothing recorded what it did, so
+// the claim could not be checked by anyone including us. The box stays hidden
+// until there is a real number: a burn counter reading zero argues against
+// the thing it is meant to prove.
+(async () => {
+  try {
+    const b = await api("/v1/burns");
+    if (!b.enabled || !b.burned) return;
+    document.querySelector("#burntext").textContent =
+      `${Math.round(b.burned).toLocaleString()} $FINNPUTER bought off the `
+      + `market and burned, across ${b.count} `
+      + `${b.count === 1 ? "burn" : "burns"}, paid for with `
+      + `${Number(b.spend_sol).toFixed(2)} SOL of trading fees. `
+      + `It runs on its own whenever the fee wallet passes `
+      + `${b.threshold_sol} SOL.`;
+    document.querySelector("#burnbox").style.display = "block";
+  } catch (e) { /* no counter rather than a wrong one */ }
+})();
 
 async function loadOpps(){
   const box = $("#opps");
