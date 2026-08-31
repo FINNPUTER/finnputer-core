@@ -150,10 +150,13 @@ function runRow(r){
   // Class "hint", the same one handoff() uses. There is no .btn in core.css,
   // so the earlier guess would have rendered two unstyled links.
   const scan = el("a","hint");
-  scan.href = tgScan(r.mint);
+  scan.href = tgBuyers(r.mint);
   scan.target = "_blank"; scan.rel = "noopener";
   scan.style.textDecoration = "none";
-  scan.textContent = "Scan the buyers in bot";
+  /* This opens the BUYERS, which is what the row above claims to have.
+     It used to open a token scan, so the count beside it was a number
+     with nothing behind it. */
+  scan.textContent = "See the buyers in bot";
   act.append(scan);
   // What the scan found, on demand.
   //

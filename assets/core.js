@@ -172,6 +172,11 @@ function oppCard(o) {
    they land in the bot with the trade set up, where identity and custody are
    already solved. No public endpoint here can spend anything. */
 const tgScan = mint => `https://t.me/${BOT}?start=core_${mint}`;
+/* The early buyers of a token, not a scan of the token.
+   The record page used to send tgScan for a button that promised the
+   buyers, so the bot answered with an ordinary token scan and the
+   number on the page stayed unopenable. */
+const tgBuyers = mint => `https://t.me/${BOT}?start=corew_${mint}`;
 const tgBuy  = (mint, amt) => `https://t.me/${BOT}?start=coreb-${amt}_${mint}`;
 
 function handoff(mint, amounts){
