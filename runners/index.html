@@ -140,12 +140,68 @@ function runRow(r){
   scan.style.textDecoration = "none";
   scan.textContent = "Scan the buyers in bot";
   act.append(scan);
+  // What the scan found, on demand.
+  //
+  // Loaded when the row is opened rather than on page load: eight rows would
+  // otherwise mean eight extra requests before anything appears, for a detail
+  // most visitors never look at. The endpoint reads the cache only, so it can
+  // never start a fresh 90 second scan behind somebody's back.
+  const more = el("a","hint");
+  more.href = "#";
+  more.style.textDecoration = "none";
+  more.textContent = "What we found";
+  const detail = el("div");
+  detail.style.cssText = "width:100%;display:none;margin-top:10px;"
+    + "font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.9";
+  let loaded = false;
+  more.onclick = async (e) => {
+    e.preventDefault();
+    const open = detail.style.display === "none";
+    detail.style.display = open ? "block" : "none";
+    more.textContent = open ? "Hide" : "What we found";
+    if (!open || loaded) return;
+    loaded = true;
+    detail.textContent = "reading the scan...";
+    try {
+      const d = await api(`/v1/scan/cached?mint=${r.mint}`
+                          + `&chain=${r.chain || "solana"}`);
+      if (!d.cached) {
+        detail.innerHTML = `<span style="color:var(--faint)">`
+          + `This token has no scan on file. The record knows it ran; the `
+          + `buyers were never read.</span>`;
+        return;
+      }
+      const bits = [];
+      if (d.risk != null) bits.push(`risk <b>${Math.round(d.risk)}</b>/100`);
+      if (d.clusters != null) bits.push(`clusters <b>${d.clusters}</b>`);
+      if (d.bundled_pct != null)
+        bits.push(`bundled <b>${Number(d.bundled_pct).toFixed(1)}%</b>`);
+      if (d.fresh_pct != null)
+        bits.push(`fresh wallets <b>${Number(d.fresh_pct).toFixed(0)}%</b>`);
+      if (d.forwarded_pct)
+        bits.push(`forwarded <b>${Number(d.forwarded_pct).toFixed(1)}%</b>`);
+      let html = d.measured
+        ? bits.join(" &middot; ")
+        : `<span style="color:var(--faint)">Bundle analysis did not run on `
+          + `this scan, which is not the same as finding nothing.</span>`;
+      if (d.funder) {
+        html += `<br><span style="color:#ffc43d">where the money came from:`
+          + `</span> ${d.funder.verdict}`;
+      }
+      detail.innerHTML = html;
+    } catch (err) {
+      detail.textContent = "Could not read the scan.";
+    }
+  };
+  act.append(more);
+
   const page = el("a","hint");
   page.href = `/token/?m=${r.mint}`;
   page.style.textDecoration = "none";
   page.textContent = "Open the scan";
   act.append(page);
   d.append(act);
+  d.append(detail);
   return d;
 }
 
