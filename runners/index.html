@@ -71,6 +71,21 @@ const CHAINS = [["", "All"], ["solana", "Solana"], ["base", "Base"],
                 ["ethereum", "Ethereum"], ["robinhood", "Robinhood"],
                 ["stable", "Stable"]];
 
+/* Which chains the scanner can actually read.
+   A filter with nothing behind it used to say "Nothing recorded on this
+   chain yet", which promises that something is coming. For a chain CORE
+   cannot read at all that is not true, and the difference matters: one is
+   a matter of time, the other is a matter of a missing explorer key.
+   /health already reports the live list, so the page asks instead of
+   assuming. */
+let LIVE = null;
+async function liveChains(){
+  if (LIVE) return LIVE;
+  try { const h = await api("/health"); LIVE = h.chains || []; }
+  catch(e){ LIVE = []; }
+  return LIVE;
+}
+
 function buildFilters(){
   const box = document.querySelector("#filters");
   box.innerHTML = "";
@@ -213,6 +228,16 @@ async function load(){
     const d = await api(`/v1/runners?limit=40${q}`);
     const rows = d.runners || [];
     if(!rows.length){
+      const live = await liveChains();
+      if (CHAIN && live.length && live.indexOf(CHAIN) === -1){
+        box.append(emptyBox(
+          "This chain is not covered yet.",
+          "The record only holds chains the scanner can read end to end. "
+          + "This one is listed because tokens trade there, but CORE cannot "
+          + "yet trace who bought them, so nothing is recorded rather than "
+          + "half recorded."));
+        return;
+      }
       box.append(emptyBox(
         CHAIN ? "Nothing recorded on this chain yet."
               : "Nothing recorded yet.",
