@@ -1,107 +1,250 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Live opportunities | FINNPUTER CORE</title>
-<meta name="description" content="Tokens several independently rated wallets are buying right now, put through the safety engine.">
+<title>Signals · FINNPUTER CORE</title>
+<meta name="description" content="Every signal, with the arithmetic that produced it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/core.css">
+<style>
+/* ── The signal ledger ────────────────────────────────────────
+   Three columns: what was measured, how it combined, what came
+   out. The middle column is the one every competitor hides. */
+.sig{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+  margin-bottom:18px;overflow:hidden}
+.sig-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:16px 18px;border-bottom:1px solid var(--line)}
+.sig-sym{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--ink)}
+.sig-score{margin-left:auto;font-family:var(--mono);font-size:26px;
+  font-weight:700;color:var(--green);line-height:1;text-align:right}
+.sig-score small{display:block;font-size:9px;letter-spacing:.14em;
+  color:var(--faint);font-weight:400;margin-top:3px}
+
+.ledger{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+@media(max-width:820px){.ledger{grid-template-columns:1fr}}
+.led-col{padding:16px 18px}
+.led-col + .led-col{border-left:1px solid var(--line)}
+@media(max-width:820px){.led-col + .led-col{border-left:0;
+  border-top:1px solid var(--line)}}
+.led-h{font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  color:var(--faint);margin-bottom:12px}
+
+.inp{display:flex;align-items:baseline;gap:10px;margin-bottom:9px;font-size:13px}
+.inp-k{color:var(--dim);flex:1}
+.inp-v{font-family:var(--mono);color:var(--ink);font-weight:500}
+
+.calc{font-family:var(--mono);font-size:12px;line-height:2;color:var(--dim)}
+.calc b{color:var(--ink);font-weight:500}
+.calc .op{color:var(--faint)}
+.calc .tot{color:var(--green);font-weight:700;font-size:14px}
+.calc hr{border:0;border-top:1px solid var(--line);margin:7px 0}
+
+.unmeas{margin-top:12px;padding:9px 11px;border-radius:8px;
+  background:rgba(255,196,61,.07);border:1px solid rgba(255,196,61,.22);
+  font-size:11px;color:#ffc43d;line-height:1.55}
+
+.sig-ft{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  padding:12px 18px;border-top:1px solid var(--line)}
+.sealed{font-family:var(--mono);font-size:10px;color:var(--faint);
+  margin-right:auto}
+.sealed b{color:var(--dim)}
+</style>
 </head>
 <body>
+<div class="aurora"><i></i><i></i><i></i></div>
 <div class="wrap">
-<header>
-  <div class="eyebrow">LIVE FEED</div>
-  <h1>Several good wallets.<br>One token. Right now.</h1>
-  <p class="sub">Not what is trending. What wallets we rated independently are buying at the same time, after the safety engine has run over it.</p>
-  <div class="cmd">
-    <input id="q" autocomplete="off" spellcheck="false" placeholder="opportunities under 250k with risk below 25">
-    <button id="go">RUN</button>
-  </div>
-  <div class="hints">
-    <button class="hint">what is smart money buying right now</button>
-    <button class="hint">opportunities under 250k with risk below 25</button>
-    <button class="hint">show me anything with 4 or more wallets</button>
-  </div>
-  <div class="trace" id="trace">
-    <div class="trace-hd"><span class="dot"></span><span id="traceTitle">WORKING</span></div>
-    <div class="trace-body" id="traceBody"></div>
-  </div>
-</header>
 
-<section class="reveal">
-  <div class="shead"><h2>LIVE</h2>
-    <p>Refreshes every minute. Components we could not verify are labelled, never assumed good.</p></div>
-  <div class="grid" id="opps"></div>
-</section>
+  <section class="reveal">
+    <div class="shead">
+      <h2>SIGNALS</h2>
+      <p>A signal fires when several wallets CORE rates highly buy the same
+         token inside one window. Each one below shows the arithmetic that
+         produced it: the inputs, the weights, the total. Check it yourself.</p>
+    </div>
+    <div id="sigs"></div>
+  </section>
 
-<section class="reveal">
-  <div class="shead"><h2>SEALED CALLS</h2>
-    <p>Market cap recorded the moment each call was made. Peaks updated afterwards, hits and misses alike.</p></div>
-  <div class="scroll" id="proofBox"></div>
-</section>
+  <section class="reveal">
+    <div class="shead">
+      <h2>HOW A SIGNAL IS BUILT</h2>
+      <p>Three parts, fixed weights, no discretion.</p>
+    </div>
+    <div class="card">
+      <div class="ledger">
+        <div class="led-col">
+          <div class="led-h">SMART MONEY · 50%</div>
+          <p class="body" style="font-size:13px;margin:0">
+            How many watched wallets bought, how highly they score, and how
+            tightly the buys cluster in time. Four wallets inside twenty
+            minutes counts for more than four across two days.</p>
+        </div>
+        <div class="led-col">
+          <div class="led-h">SAFETY · 30%</div>
+          <p class="body" style="font-size:13px;margin:0">
+            The scan. Bundled supply, clusters, forwarded supply, fresh
+            wallets, contract flags. A token that fails hard is dropped
+            regardless of who bought it.</p>
+        </div>
+        <div class="led-col">
+          <div class="led-h">MOMENTUM · 20%</div>
+          <p class="body" style="font-size:13px;margin:0">
+            Liquidity, and how far into its life the token is. Enough to get
+            out of, early enough to matter.</p>
+        </div>
+      </div>
+    </div>
+    <p class="body" style="margin-top:18px;font-size:13px">
+      When a part cannot be measured it is named rather than scored as zero.
+      A signal built on two of three parts is not the same as one built on
+      three, and you can see which you are looking at.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="shead">
+      <h2>WHY WE PRINT THE METHOD</h2>
+    </div>
+    <div class="card">
+      <p class="body" style="margin:0">
+        Every other signal product treats its method as the product and will
+        not describe it. Ours is printed above, in full.
+      </p>
+      <p class="body" style="margin:14px 0 0">
+        The method is not the moat. The measurements are, and those take
+        months of scanning to accumulate. Anyone can read how the score is
+        built. Nobody else can tell you that the wallet buying this token
+        also caught four runners under sixty thousand, because nobody else
+        was watching the buyers when it happened.
+      </p>
+    </div>
+  </section>
+
 </div>
 <script src="/assets/core.js"></script>
 <script>
-chrome_("/opportunities/"); effects();
+function pct(v){ return v == null ? "n/a" : String(Math.round(Number(v))); }
 
-async function loadOpps(){
-  const box = $("#opps");
+function inputRow(label, value){
+  const d = el("div","inp");
+  const k = el("span","inp-k"); k.textContent = label;
+  const v = el("span","inp-v"); v.textContent = value;
+  d.append(k, v);
+  return d;
+}
+
+function signalCard(o){
+  const c = el("div","sig");
+
+  const hd = el("div","sig-hd");
+  const sym = el("span","sig-sym");
+  sym.textContent = "$" + (o.symbol || short(o.mint));
+  hd.append(sym, chainChip(o.chain || "solana", {size:"sm"}));
+  if(o.market_cap){
+    const m = el("span","tag"); m.textContent = usd(o.market_cap); hd.append(m);
+  }
+  const sc = el("div","sig-score");
+  sc.innerHTML = pct(o.opportunity) + "<small>OPPORTUNITY</small>";
+  hd.append(sc);
+  c.append(hd);
+
+  const led = el("div","ledger");
+
+  const a = el("div","led-col");
+  const ah = el("div","led-h"); ah.textContent = "MEASURED";
+  a.append(ah);
+  a.append(inputRow("wallets bought", o.wallet_count == null ? "?" : o.wallet_count));
+  a.append(inputRow("avg wallet score", pct(o.avg_wallet_score)));
+  // first_seen and updated_at are what the table actually stores. The
+  // per-buy timestamps live in convergence_events, not here.
+  if(o.first_seen && o.updated_at && o.updated_at > o.first_seen){
+    const mins = Math.max(1, Math.round((o.updated_at - o.first_seen) / 60));
+    a.append(inputRow("window", mins + " min"));
+  }
+  if(o.combined_sol) a.append(inputRow("committed",
+      Number(o.combined_sol).toFixed(2) + " SOL"));
+  if(o.liquidity) a.append(inputRow("liquidity", usd(o.liquidity)));
+  if(o.risk_score != null) a.append(inputRow("risk", pct(o.risk_score) + "/100"));
+  led.append(a);
+
+  // The arithmetic. This is the column nobody else prints.
+  const b = el("div","led-col");
+  const bh = el("div","led-h"); bh.textContent = "ARITHMETIC";
+  b.append(bh);
+  const calc = el("div","calc");
+  const line = (name, val, w) => val == null
+    ? '<span class="op">' + name + '</span> not measured<br>'
+    : '<span class="op">' + name + '</span> <b>' + pct(val)
+      + '</b> <span class="op">&times;</span> ' + w + '<br>';
+  calc.innerHTML =
+      line("smart money", o.smart_money, "0.5")
+    + line("safety", o.safety, "0.3")
+    + line("momentum", o.momentum, "0.2")
+    + '<hr><span class="op">total</span> <span class="tot">'
+    + pct(o.opportunity) + '</span>';
+  b.append(calc);
+
+  if(o.unmeasured){
+    const u = el("div","unmeas");
+    u.textContent = "Not verified: " + o.unmeasured
+      + ". Scored on what was measurable, not counted as zero.";
+    b.append(u);
+  }
+  led.append(b);
+
+  const cc = el("div","led-col");
+  const ch = el("div","led-h"); ch.textContent = "WHAT THIS SAYS";
+  cc.append(ch);
+  const p = el("p","body");
+  p.style.cssText = "font-size:13px;margin:0";
+  const n = o.wallet_count || 0;
+  p.textContent = n + " wallet" + (n === 1 ? "" : "s")
+    + " we rate on measured outcomes bought this token inside the same "
+    + "window. That is a coincidence at two and a pattern at four. It is not "
+    + "a recommendation: it is a thing that happened, and the numbers to the "
+    + "left are all of it.";
+  cc.append(p);
+  led.append(cc);
+  c.append(led);
+
+  const ft = el("div","sig-ft");
+  // No seal column on this table: the sealed record lives in puterproof.
+  // Claiming one here would be inventing provenance, which is the exact
+  // thing this page exists to argue against.
+  const s = el("span","sealed");
+  s.textContent = "first seen " + ago(o.first_seen) + " ago"
+    + (o.market_cap ? " at " + usd(o.market_cap) : "");
+  ft.append(s);
+  const h = handoff(o.mint, [0.1, 0.5]);
+  while(h.firstChild) ft.append(h.firstChild);
+  c.append(ft);
+  return c;
+}
+
+async function load(){
+  const box = document.querySelector("#sigs");
+  box.innerHTML = "";
   try{
-    const d = await api("/v1/opportunities?limit=18");
-    box.innerHTML = "";
-    if(!d.opportunities.length){
-      box.append(emptyBox("No live convergence right now.",
-        "Nothing is being bought by enough rated wallets at once. This fills itself when it happens, there is nothing to press."));
+    const d = await api("/v1/opportunities?min=40&limit=12");
+    const rows = d.opportunities || d.rows || [];
+    if(!rows.length){
+      box.append(emptyBox("No signal right now.",
+        "A signal needs several highly rated wallets to buy the same token "
+        + "inside one window. That is rarer than a trending list, which is "
+        + "the point: an empty page here means nothing converged, not that "
+        + "nothing is being watched."));
       return;
     }
-    d.opportunities.forEach(o => box.append(oppCard(o)));
+    rows.forEach(function(o){ box.append(signalCard(o)); });
   }catch(e){
-    box.innerHTML = "";
-    box.append(emptyBox("CORE API not reachable.","Check the API constant in /assets/core.js and the service logs."));
+    box.append(emptyBox("CORE API not reachable.", ""));
   }
 }
 
-async function loadProof(){
-  const box = $("#proofBox");
-  try{
-    const d = await api("/v1/proof");
-    if(!d.proofs.length){
-      box.innerHTML=""; box.append(emptyBox("No calls sealed yet.",
-        "A proof is written the moment an opportunity crosses the bar. None have yet."));
-      return;
-    }
-    const t = el("table","tbl");
-    t.innerHTML = `<thead><tr><th>TOKEN</th><th class="n">AT CALL</th><th class="n">PEAK</th>
-      <th class="n">RESULT</th><th class="n">OPP</th><th class="n">WHEN</th><th>SEAL</th></tr></thead>`;
-    const tb = el("tbody");
-    d.proofs.forEach(p => {
-      const m = p.multiple || 1;
-      const c = m>=2?"var(--green)":m>=1.2?"var(--gold)":"var(--dim)";
-      const tr = el("tr");
-      tr.innerHTML = `<td><a href="/token/?m=${p.mint}">${p.symbol||short(p.mint)}</a></td>
-        <td class="n">${usd(p.mcap_at_call)}</td><td class="n">${usd(p.peak_mcap)}</td>
-        <td class="n" style="color:${c};font-weight:700">${m.toFixed(2)}x</td>
-        <td class="n">${p.opportunity??"n/a"}</td>
-        <td class="n" style="color:var(--faint)">${ago(p.called_at)}</td>
-        <td style="color:var(--faint)">${(p.seal||"").slice(0,12)}</td>`;
-      tb.append(tr);
-    });
-    t.append(tb); box.innerHTML=""; box.append(t);
-  }catch(e){ box.innerHTML=""; box.append(emptyBox("CORE API not reachable.","Check the API constant.")); }
-}
-
-mountCommand(d => {
-  if (d.action !== "opportunities") return;
-  const box = $("#opps"); box.innerHTML = "";
-  if (!d.results.length) box.append(emptyBox("Nothing matched those filters.","Loosen the market cap or risk bound and run it again."));
-  else d.results.forEach(o => box.append(oppCard(o)));
-  document.querySelector("section").scrollIntoView({behavior:"smooth",block:"start"});
-});
-
-loadOpps(); loadProof(); setInterval(loadOpps, 60000);
+load();
+setInterval(load, 60000);
 </script>
 </body>
 </html>
