@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The record · FINNPUTER CORE</title>
+<meta name="description" content="Tokens that ran, and what we recorded while they did.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<style>
+.run{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:16px 18px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);margin-bottom:10px}
+.run-sym{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);
+  min-width:96px}
+.run-sym small{display:block;font-size:10px;color:var(--faint);font-weight:400;
+  margin-top:2px;cursor:pointer}
+.run-arc{font-family:var(--mono);font-size:13px;color:var(--dim);flex:1;
+  min-width:190px}
+.run-arc b{color:var(--ink);font-weight:500}
+.run-x{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--green)}
+.run-x small{display:block;font-size:9px;letter-spacing:.14em;color:var(--faint);
+  font-weight:400;text-align:right}
+.filt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  background:var(--panel);color:var(--dim);border:1px solid var(--line);
+  border-radius:999px;padding:7px 14px;cursor:pointer;transition:all .18s;
+  display:inline-flex;align-items:center;gap:6px}
+.filt:hover{color:var(--ink);border-color:rgba(25,232,160,.3)}
+.filt.on{color:var(--green);border-color:rgba(25,232,160,.45);
+  background:rgba(25,232,160,.07)}
+</style>
+</head>
+<body>
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="wrap">
+
+  <section class="reveal">
+    <div class="shead">
+      <h2>THE RECORD</h2>
+      <p>Tokens that ran, and what was recorded while they did. Every number
+         below is measured: the market cap when a scan first saw it, the peak
+         it reached, and how many of its early buyers are now scored.</p>
+    </div>
+
+    <div id="filters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+    <div id="runs"></div>
+
+    <div class="card" style="margin-top:22px">
+      <p class="body" style="margin:0">
+        <b>These are not calls.</b> The detector finds a token after it has
+        run, not before. Anyone claiming otherwise is selling you a screenshot.
+      </p>
+      <p class="body" style="margin:14px 0 0">
+        What it does prove is the part that carries forward: the wallets that
+        bought these early were being watched at the time, and they are scored
+        and followed now. The next thing they buy shows up in
+        <a href="/buys/">the live feed</a> while it is still happening.
+      </p>
+    </div>
+  </section>
+
+</div>
+<script src="/assets/core.js"></script>
+<script>
+chrome_("/runners/"); effects();
+
+let CHAIN = "";
+const CHAINS = [["", "All"], ["solana", "Solana"], ["base", "Base"],
+                ["ethereum", "Ethereum"], ["robinhood", "Robinhood"],
+                ["stable", "Stable"]];
+
+function buildFilters(){
+  const box = document.querySelector("#filters");
+  box.innerHTML = "";
+  CHAINS.forEach(([id, label]) => {
+    const b = el("button", "filt" + (id === CHAIN ? " on" : ""));
+    if (id) b.append(chainChip(id, {size:"sm", label:false}));
+    b.append(document.createTextNode(label));
+    b.onclick = () => { CHAIN = id; buildFilters(); load(); };
+    box.append(b);
+  });
+}
+
+function runRow(r){
+  const d = el("div","run");
+
+  const sym = el("div","run-sym");
+  sym.textContent = r.symbol ? "$" + r.symbol : short(r.mint);
+  const sub = el("small");
+  sub.textContent = short(r.mint);
+  sub.title = "Click to copy";
+  sub.onclick = () => {
+    navigator.clipboard.writeText(r.mint);
+    sub.textContent = "copied";
+    setTimeout(() => { sub.textContent = short(r.mint); }, 1200);
+  };
+  sym.append(sub);
+  d.append(sym);
+  d.append(chainChip(r.chain || "solana", {size:"sm"}));
+
+  const arc = el("div","run-arc");
+  const from = r.first_mcap ? usd(r.first_mcap) : "?";
+  const to = r.peak_mcap ? usd(r.peak_mcap) : "?";
+  arc.innerHTML = `first seen at <b>${from}</b> &rsaquo; peaked <b>${to}</b>`;
+  if (r.wallets_seeded) {
+    arc.innerHTML += `<br><span style="color:var(--faint);font-size:12px">`
+      + `${r.wallets_seeded} early buyers recorded and scored</span>`;
+  }
+  d.append(arc);
+
+  const x = el("div","run-x");
+  x.innerHTML = `${Number(r.multiple || 0).toFixed(1)}x<small>PEAK</small>`;
+  d.append(x);
+  return d;
+}
+
+async function load(){
+  const box = document.querySelector("#runs");
+  box.innerHTML = "";
+  try{
+    const q = CHAIN ? `&chain=${CHAIN}` : "";
+    const d = await api(`/v1/runners?limit=40${q}`);
+    const rows = d.runners || [];
+    if(!rows.length){
+      box.append(emptyBox(
+        CHAIN ? "Nothing recorded on this chain yet."
+              : "Nothing recorded yet.",
+        "A token enters the record once it has actually run. The scanner has "
+        + "to have seen it early enough for the number to mean anything, "
+        + "which is why this fills up slowly rather than all at once."));
+      return;
+    }
+    rows.forEach(r => box.append(runRow(r)));
+  }catch(e){
+    box.append(emptyBox("CORE API not reachable.", ""));
+  }
+}
+
+buildFilters();
+load();
+setInterval(load, 120000);
+</script>
+</body>
+</html>

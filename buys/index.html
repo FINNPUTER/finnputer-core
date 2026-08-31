@@ -103,8 +103,27 @@ async function loadGrouped(){
       const head = el("div","card-hd");
       const left = el("div");
       const h = el("h3");
-      h.textContent = short(t.mint);
+      // Name first, address underneath.
+      //
+      // The feed read "CeLJ...pump" for every row, which tells a reader
+      // nothing and makes every entry look identical. The symbol comes from
+      // whichever source knows it; when none does, the address is still shown
+      // rather than a placeholder, because a truncated mint is at least real.
+      h.textContent = t.symbol ? "$" + t.symbol : short(t.mint);
       left.append(h);
+      if (t.symbol) {
+        const sub = el("div");
+        sub.style.cssText = "font-family:var(--mono);font-size:11px;"
+          + "color:var(--faint);margin-top:2px;cursor:pointer";
+        sub.textContent = short(t.mint);
+        sub.title = "Click to copy the full address";
+        sub.onclick = () => {
+          navigator.clipboard.writeText(t.mint);
+          sub.textContent = "copied";
+          setTimeout(() => { sub.textContent = short(t.mint); }, 1200);
+        };
+        left.append(sub);
+      }
       const meta = el("div","meta");
       const cw = el("span","tag");
       cw.style.cssText = "display:inline-flex;align-items:center;padding:3px 9px 3px 5px";
@@ -160,7 +179,8 @@ async function loadFeed(){
         <td><a href="/wallet/?a=${b.wallet}">${short(b.wallet)}</a></td>
         <td><b>${b.puter_score == null ? "?" : Math.round(b.puter_score)}</b></td>
         <td style="color:var(--dim)">${(b.label || "").replace(/_/g, " ")}</td>
-        <td><a href="/token/?m=${b.mint}">${short(b.mint)}</a></td>
+        <td><a href="/token/?m=${b.mint}">${b.symbol ? "$" + b.symbol
+             : short(b.mint)}</a></td>
         <td class="chaincell" data-chain="${b.chain || 'solana'}"></td>
         <td class="r">${b.sol ? Number(b.sol).toFixed(3) + " SOL" : "-"}</td>`;
       tb.append(tr);
