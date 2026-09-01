@@ -283,7 +283,7 @@ async function lookupAddress(addr) {
 
   if (t && t.scanned_at && t.peak_mcap > 0 && t.multiple >= 2) {
     traceAdd("scanned, and it ran", true);
-    traceAdd("$" + (t.symbol || "?") + " · first seen at " + usd(t.first_mcap)
+    traceAdd("$" + (t.symbol || "?") + " · lowest seen at " + usd(t.first_mcap)
              + " · peaked at " + usd(t.peak_mcap) + " · "
              + Number(t.multiple).toFixed(1) + "x");
     if (t.wallets_seeded) {
@@ -291,7 +291,7 @@ async function lookupAddress(addr) {
     }
   } else if (t && t.scanned_at) {
     traceAdd("scanned, no run recorded", true);
-    traceAdd("$" + (t.symbol || "?") + " · first seen at " + usd(t.first_mcap)
+    traceAdd("$" + (t.symbol || "?") + " · lowest seen at " + usd(t.first_mcap)
              + ". Nothing has happened since, which is not a verdict, only "
              + "what the record currently holds.");
   } else {
