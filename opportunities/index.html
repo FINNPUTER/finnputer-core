@@ -48,6 +48,10 @@
 
 .sig-ft{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
   padding:12px 18px;border-top:1px solid var(--line)}
+.outcome{font:12px ui-monospace,monospace;padding:2px 8px;border-radius:99px;
+  margin-left:10px;letter-spacing:.02em}
+.outcome.up{color:#7ee787;border:1px solid #2ea04326;background:#2ea04314}
+.outcome.flat{color:#8b949e;border:1px solid #8b949e26}
 .sealed{font-family:var(--mono);font-size:10px;color:var(--faint);
   margin-right:auto}
 .sealed b{color:var(--dim)}
@@ -175,8 +179,15 @@ function signalCard(o){
   }
   if(o.combined_sol) a.append(inputRow("committed",
       Number(o.combined_sol).toFixed(2) + " SOL"));
-  if(o.liquidity) a.append(inputRow("liquidity", usd(o.liquidity)));
-  if(o.risk_score != null) a.append(inputRow("risk", pct(o.risk_score) + "/100"));
+  // o.liquidity is the liquidity COMPONENT, scored out of the weight 15, not
+  // a dollar amount. Printing it as usd() put "$6" next to a $149k market cap
+  // and left it sitting in MEASURED, where every other row is a real
+  // measurement. It belongs in ARITHMETIC with the other three components.
+  //
+  // The score runs 100 = SAFE on every chain. Labelling it "risk" inverted
+  // the meaning: "risk 92/100" reads as a dangerous token when it is the
+  // safest one on the page.
+  if(o.risk_score != null) a.append(inputRow("safety", pct(o.risk_score) + "/100"));
   led.append(a);
 
   // The arithmetic. This is the column nobody else prints.
@@ -184,22 +195,47 @@ function signalCard(o){
   const bh = el("div","led-h"); bh.textContent = "ARITHMETIC";
   b.append(bh);
   const calc = el("div","calc");
-  const line = (name, val, w) => val == null
-    ? '<span class="op">' + name + '</span> not measured<br>'
+  // "not measured" stays visually distinct from a zero. A component that
+  // could not be read is not a component that scored nothing.
+  const line = (name, val, max) => val == null
+    ? '<span class="op">' + name + '</span> <span class="op">not measured</span><br>'
     : '<span class="op">' + name + '</span> <b>' + pct(val)
-      + '</b> <span class="op">&times;</span> ' + w + '<br>';
-  calc.innerHTML =
-      line("smart money", o.smart_money, "0.5")
-    + line("safety", o.safety, "0.3")
-    + line("momentum", o.momentum, "0.2")
+      + '</b> <span class="op">of ' + max + '</span><br>';
+  // Every component, and the real weights.
+  //
+  // This block listed three of the four and printed weights (0.5/0.3/0.2)
+  // that do not exist anywhere in the scorer, which uses smart_money 35,
+  // safety 35, liquidity 15, momentum 15. The liquidity component was simply
+  // absent, so the three lines never added up to the total shown beneath
+  // them: 16 + 30 + 15 was presented as 67. On a page whose own text says
+  // "the numbers to the left are all of it", arithmetic that does not add up
+  // is the one thing that must never ship.
+  //
+  // The numbers are already weighted points, so they are SUMMED, not
+  // multiplied. Showing a multiplier next to an already weighted value
+  // invited exactly the subtraction that exposed this.
+  const parts = [
+    ["smart money", o.smart_money, 35],
+    ["safety",      o.safety,      35],
+    ["liquidity",   o.liquidity,   15],
+    ["momentum",    o.momentum,    15]
+  ];
+  calc.innerHTML = parts.map(function(p){
+    return line(p[0], p[1], p[2]);
+  }).join("")
     + '<hr><span class="op">total</span> <span class="tot">'
     + pct(o.opportunity) + '</span>';
   b.append(calc);
 
-  if(o.unmeasured){
+  if(o.unmeasured != null && o.unmeasured !== false){
     const u = el("div","unmeas");
-    u.textContent = "Not verified: " + o.unmeasured
-      + ". Scored on what was measurable, not counted as zero.";
+    // o.unmeasured is sometimes an empty string, which produced the literal
+    // "Not verified: . Scored on..." on every card. An empty reason is not a
+    // reason, so say the general thing instead of gluing a stray full stop on.
+    const why = String(o.unmeasured || "").trim();
+    u.textContent = why
+      ? "Not verified: " + why + ". Scored on what was measurable, not counted as zero."
+      : "Some inputs could not be verified. Scored on what was measurable, not counted as zero.";
     b.append(u);
   }
   led.append(b);
@@ -224,9 +260,33 @@ function signalCard(o){
   // Claiming one here would be inventing provenance, which is the exact
   // thing this page exists to argue against.
   const s = el("span","sealed");
-  s.textContent = "first seen " + ago(o.first_seen) + " ago"
-    + (o.market_cap ? " at " + usd(o.market_cap) : "");
+  // The entry the proof actually recorded, not today's market cap. Those two
+  // drifted apart on every card: the line said "first seen 1h ago at $149k"
+  // while $149k was the CURRENT number, so a token that had already moved
+  // showed an entry price it never had.
+  const entry = o.called_mcap != null ? o.called_mcap : o.market_cap;
+  s.textContent = "first seen " + ago(o.called_at || o.first_seen) + " ago"
+    + (entry ? " at " + usd(entry) : "");
   ft.append(s);
+
+  // What became of it. This is the only claim on the page that can be checked
+  // against the chain, and it was sitting unused in puterproof the whole time.
+  //
+  // peak_mcap is a HIGH WATER MARK. A call that went 5x and came back still
+  // went 5x, and quietly showing today's price instead would rewrite every
+  // past result downward as time passes. The wording says which one it is.
+  if(o.multiple != null && o.peak_mcap != null && entry){
+    const x = Number(o.multiple);
+    const r = el("span", x >= 2 ? "outcome up" : "outcome flat");
+    r.textContent = x >= 1.05
+      ? "high " + usd(o.peak_mcap) + " \u00b7 " + x.toFixed(1) + "x since"
+      : "no move since \u00b7 high " + usd(o.peak_mcap);
+    ft.append(r);
+  } else {
+    const r = el("span","outcome flat");
+    r.textContent = "no result recorded yet";
+    ft.append(r);
+  }
   const h = handoff(o.mint, [0.1, 0.5]);
   while(h.firstChild) ft.append(h.firstChild);
   c.append(ft);

@@ -153,8 +153,13 @@ function oppCard(o) {
   add(`${o.wallet_count} wallets`, "good");
   add(`avg score ${o.avg_wallet_score}`);
   if (o.market_cap) add(usd(o.market_cap));
-  if (o.risk_score != null) add(`risk ${o.risk_score}`,
-    o.risk_score >= 50 ? "bad" : o.risk_score >= 25 ? "warn" : "good");
+  // 100 = safe, 0 = worst, the same scale on every chain. This badge read it
+  // upside down: it painted a 92 red and a 10 green, so the safest tokens on
+  // the board wore the danger colour. Same inversion as the "risk 92/100"
+  // label on the opportunities page, and the same cause: a score that counts
+  // safety upward being read as if it counted danger upward.
+  if (o.risk_score != null) add(`safety ${o.risk_score}`,
+    o.risk_score >= 75 ? "good" : o.risk_score >= 50 ? "warn" : "bad");
   (o.unmeasured || []).forEach(u => add(u + " unmeasured", "warn"));
   ((o.detail || {}).hard_fails || []).forEach(h => add(h, "bad"));
   c.append(meta);
