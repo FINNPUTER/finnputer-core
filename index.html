@@ -77,8 +77,27 @@
 </section>
 
 <section class="reveal">
+  <div class="shead"><h2>WHERE TO START</h2>
+    <p>Four pages, four different questions. This one is the first.</p></div>
+  <div class="orient">
+    <a href="/opportunities/" class="here"><span class="tag">NOW</span>
+      <span class="q">Which token are several rated wallets buying right now?</span>
+      <span class="w">The main feed. Start here.</span></a>
+    <a href="/runners/"><span class="tag">BEFORE</span>
+      <span class="q">What did we scan that later ran?</span>
+      <span class="w">The record, measured from the market cap at our first scan.</span></a>
+    <a href="/smart-money/"><span class="tag">WHO</span>
+      <span class="q">Which wallets are worth watching, and why?</span>
+      <span class="w">Rated on measured outcomes, not on follower counts.</span></a>
+    <a href="/buys/"><span class="tag">RAW</span>
+      <span class="q">What is being bought this minute?</span>
+      <span class="w">Every sighting, unfiltered. Noisy on purpose.</span></a>
+  </div>
+</section>
+
+<section class="reveal">
   <div class="shead"><h2>LIVE RIGHT NOW</h2>
-    <p>Refreshes on its own. <a href="/opportunities/" style="color:var(--green)">Full feed</a></p></div>
+    <p>Several rated wallets, one token, one window. Refreshes on its own. <a href="/opportunities/" style="color:var(--green)">Full feed</a></p></div>
   <div class="grid" id="opps"></div>
 </section>
 
@@ -261,7 +280,7 @@ async function loadOpps(){
   }
 }
 
-const LABELS = {wallets_scored:"WALLETS SCORED", wallets_elite:"AT 80 PLUS",
+const LABELS = {wallets_scored:"WALLETS SCORED", wallets_elite:"AT THE WATCH BAR",
   runners_seeded:"RUNNERS WITNESSED", sightings_24h:"BUYS SEEN 24H",
   opportunities_live:"LIVE NOW", proofs:"CALLS SEALED"};
 async function loadStats(){

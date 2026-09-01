@@ -29,11 +29,21 @@ async function api(path, opts) {
 function chrome_(active) {
   document.body.insertAdjacentHTML("afterbegin",
     '<div class="aurora"><i></i><i></i><i></i></div><div class="grain"></div>');
+  // Third entry is a title attribute: the question the page answers.
+  //
+  // Signals, Runners, Live buys and Smart money all read as "tokens to look
+  // at" from the label alone, so a visitor clicks one, decides the site is
+  // repeating itself, and leaves. The tooltip costs nothing and removes the
+  // ambiguity for anyone who hesitates over a tab.
   const links = [
-    ["/", "Home"], ["/opportunities/", "Signals"], ["/runners/", "Runners"],
-    ["/buys/", "Live buys"],
-    ["/smart-money/", "Smart money"],
-    ["/token/", "Token"], ["/how/", "How it works"],
+    ["/", "Home", "Start here"],
+    ["/opportunities/", "Signals",
+     "Which token are several rated wallets buying right now"],
+    ["/runners/", "Runners", "What we scanned that later ran"],
+    ["/buys/", "Live buys", "Every sighting this minute, unfiltered"],
+    ["/smart-money/", "Smart money", "Which wallets are worth watching, and why"],
+    ["/token/", "Token", "$FINNPUTER, fees and burn"],
+    ["/how/", "How it works", "The method, end to end"],
   ];
   const nav = el("nav");
   // Mark, if the file exists. Falls back to the wordmark on 404 so a missing
@@ -42,8 +52,9 @@ function chrome_(active) {
     + '<img class="mark" src="/assets/mark.png" alt="" '
     + 'onerror="this.remove()"><b>FINNPUTER</b></a>';
   nav.innerHTML = mark + links.slice(1).map(
-    ([h, t]) => `<a href="${h}"${h === active ? ' class="on"' : ""}>${t}</a>`).join("") +
-    '<a href="https://finnputerdex.com">Perps</a>';
+    ([h, t, q]) => `<a href="${h}"${h === active ? ' class="on"' : ""}`
+      + (q ? ` title="${q}"` : "") + `>${t}</a>`).join("") +
+    '<a href="https://finnputerdex.com" title="Perpetuals, separate site">Perps</a>';
   if (active === "/") nav.querySelector("a").classList.add("on");
 
   // The mark link stays visible at every width; everything else collapses
@@ -401,7 +412,11 @@ async function loadTicker() {
     const s = await api("/v1/stats");
     if (s.wallets_scored) {
       items.push(`<span><b>${s.wallets_scored}</b> wallets scored &middot; `
-        + `<b>${s.wallets_elite || 0}</b> above 80</span>`);
+        // The bar comes from the API, not from a second copy here. It was
+        // hardcoded to 80 in three files while the watchlist that decides
+        // anything uses 75, so the site could report zero elite wallets while
+        // the engine was watching a hundred.
+        + `<b>${s.wallets_elite || 0}</b> above ${s.elite_score || 75}</span>`);
     }
     if (s.runners_seeded) {
       items.push(`<span><b>${s.runners_seeded}</b> runners witnessed and seeded</span>`);
