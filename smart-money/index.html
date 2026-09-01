@@ -29,7 +29,9 @@
 
 <section class="reveal">
   <div class="shead"><h2>RANKING</h2>
-    <p>Sorted by Puter Score. Click a wallet for its full record.</p></div>
+    <p>Sorted by how many runners a wallet was early in, then by how far the
+    best one went. A pattern beats a single lucky sighting. Click a wallet for
+    its full record.</p></div>
   <div class="scroll" id="box"></div>
 </section>
 
@@ -54,7 +56,7 @@ function table(rows){
   t.innerHTML = `<thead><tr><th>WALLET</th><th>CHAIN</th><th>LABEL</th><th class="n">SCORE</th>
     <th class="n">TOKENS</th><th class="n">BEST CALL</th><th class="n">TOTAL X</th>
     <th class="n">CALLS</th>
-    <th class="n">CLOSED</th><th class="n">WIN RATE</th>
+    <th class="n" title="Positions we have seen this wallet close">CLOSED</th><th class="n" title="Of the closed positions, how many were up. Blank means we never saw an exit.">WIN RATE</th>
     <th class="n">NET SOL</th><th class="n">AVG ENTRY</th></tr></thead>`;
   const tb = el("tbody");
   rows.forEach(w => {
@@ -70,8 +72,10 @@ function table(rows){
       <td class="n">${(w.total_call||0) >= 2 ? Math.round(w.total_call)+"x" : "\u2014"}</td>
       <td class="n">${w.calls || 0}</td>
       <td class="n">${w.closed_trades}</td>
-      <td class="n">${w.win_rate==null?"n/a":w.win_rate+"%"}</td>
-      <td class="n" style="color:${(w.net_sol||0)>0?"var(--green)":"var(--red)"}">${(w.net_sol||0).toFixed(1)}</td>
+      <td class="n" title="${w.win_rate==null?"We have never seen this wallet close a position. Its exit is unknown, which is not the same as a bad exit.":""}">${
+        w.win_rate==null?'<span style="color:var(--faint)">exit unknown</span>':w.win_rate+"%"}</td>
+      <td class="n" style="color:${w.closed_trades?((w.net_sol||0)>0?"var(--green)":"var(--red)"):"var(--faint)"}">${
+        w.closed_trades ? (w.net_sol||0).toFixed(1) : "\u2014"}</td>
       <td class="n">${usd(w.avg_entry_mcap)}</td>
 `;
     tb.append(tr);
