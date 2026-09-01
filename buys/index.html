@@ -111,6 +111,14 @@ async function loadGrouped(){
       // rather than a placeholder, because a truncated mint is at least real.
       h.textContent = t.symbol ? "$" + t.symbol : short(t.mint);
       left.append(h);
+      // The token's full name, when the market knows it. "$BROW" says
+      // little; "$BROW · eyebrow" is a token somebody can recognise.
+      if (t.name && t.symbol && t.name.toLowerCase() !== t.symbol.toLowerCase()){
+        const nm = el("span");
+        nm.style.cssText = "font-size:12px;color:var(--faint);margin-left:8px";
+        nm.textContent = t.name;
+        h.append(nm);
+      }
       if (t.symbol) {
         const sub = el("div");
         sub.style.cssText = "font-family:var(--mono);font-size:11px;"
@@ -137,6 +145,38 @@ async function loadGrouped(){
         const s = el("span","tag");
         s.textContent = Number(t.total_sol).toFixed(2) + " SOL in";
         meta.append(s);
+      }
+      /* Market data. "2 wallets, 2.14 SOL in" is a number without a size:
+         the same figure means something very different at $30k and at $3M.
+         Market cap, liquidity and the 24h move come from one batched
+         Dexscreener call for the whole page, so this costs nothing. */
+      const usd = v => v >= 1e6 ? "$" + (v/1e6).toFixed(1) + "M"
+                     : v >= 1e3 ? "$" + Math.round(v/1e3) + "k"
+                     : "$" + Math.round(v);
+      if (t.market_cap > 0){
+        const m = el("span","tag");
+        m.textContent = usd(t.market_cap) + " mcap";
+        meta.append(m);
+      }
+      if (t.liquidity > 0){
+        const l = el("span","tag");
+        l.textContent = usd(t.liquidity) + " liq";
+        meta.append(l);
+      }
+      if (typeof t.change_24h === "number" && t.change_24h !== 0){
+        const c = el("span", "tag " + (t.change_24h > 0 ? "good" : "bad"));
+        c.textContent = (t.change_24h > 0 ? "+" : "")
+          + t.change_24h.toFixed(0) + "% 24h";
+        meta.append(c);
+      }
+      /* What it is quoted against, when that is not a gas coin. On
+         Robinhood Chain a token can be priced in Apple or Palantir, and
+         then its dollar price moves with a share that closes at night. */
+      if (t.quote && !["SOL","WSOL","ETH","WETH","USDC","USDT","USDG","DAI"]
+            .includes(String(t.quote).toUpperCase())){
+        const q = el("span","tag warn");
+        q.textContent = "vs " + t.quote;
+        meta.append(q);
       }
       const when = el("span","tag");
       when.textContent = ago(t.last_buy);
