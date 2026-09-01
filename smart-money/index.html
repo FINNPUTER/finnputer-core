@@ -73,11 +73,7 @@ function table(rows){
       <td class="n">${w.win_rate==null?"n/a":w.win_rate+"%"}</td>
       <td class="n" style="color:${(w.net_sol||0)>0?"var(--green)":"var(--red)"}">${(w.net_sol||0).toFixed(1)}</td>
       <td class="n">${usd(w.avg_entry_mcap)}</td>
-      <td class="n" style="color:${(w.best_call||0)>=10?"var(--green)":"var(--dim)"}">${
-        (w.best_call||0) >= 2 ? Number(w.best_call).toFixed(1)+"x" : "\u2014"}</td>
-      <td class="n" style="color:${(w.total_call||0)>=25?"var(--green)":"var(--dim)"}">${
-        (w.total_call||0) >= 2 ? Math.round(w.total_call)+"x" : "\u2014"}</td>
-      <td class="n">${w.calls || "\u2014"}</td>`;
+`;
     tb.append(tr);
   });
   t.append(tb);
