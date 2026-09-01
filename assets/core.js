@@ -230,43 +230,80 @@ function traceAdd(text, said) {
    token they were already interested in. */
 const ADDR_RE = /^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/;
 
-async function lookupToken(addr) {
+async function lookupAddress(addr) {
+  /* An address on Solana is base58 and 32 to 44 characters, and so is a
+     wallet. They cannot be told apart by shape, so both have to be asked.
+
+     The first version asked only the token endpoint. Pasting a wallet on
+     the smart money page therefore came back "nothing recorded for this
+     one, open it in the bot", which is wrong twice: it is not a token, and
+     a wallet cannot be scanned in the bot. A confident wrong answer is
+     worse than a slow one, so this asks both and says plainly when neither
+     knows the address. */
   traceReset("LOOKING UP");
-  traceAdd("checking the archive for " + addr.slice(0, 6) + "…" + addr.slice(-4));
-  let d = null;
-  try {
-    d = await api("/v1/token/" + addr);
-  } catch (e) { d = null; }
+  const shortAddr = addr.slice(0, 6) + "…" + addr.slice(-4);
+  traceAdd("checking the archive for " + shortAddr);
 
   const usd = v => v >= 1e6 ? "$" + (v / 1e6).toFixed(2) + "M"
                  : v >= 1e3 ? "$" + Math.round(v / 1e3) + "k"
                  : "$" + Math.round(v || 0);
+  const done = () => {
+    $("#traceTitle").textContent = "DONE";
+    const dot = $("#trace .dot"); if (dot) dot.style.animation = "none";
+  };
 
-  if (!d || !d.scanned_at) {
-    traceAdd("not in the archive yet", true);
-    traceAdd("Nothing recorded for this one. Open it in the bot and it "
-             + "becomes part of the record from that moment.");
+  let w = null, t = null;
+  try { w = await api("/v1/wallet/" + addr); } catch (e) { w = null; }
+
+  // A wallet we have scored answers the question on its own.
+  if (w && w.known) {
+    traceAdd("wallet found", true);
+    const bits = ["Puter Score " + w.puter_score];
+    if (w.label) bits.push(String(w.label).replace(/_/g, " "));
+    traceAdd(bits.join(" · "));
+    const line = [];
+    if (w.winners) line.push(w.winners + " tokens");
+    if (w.best_call >= 2) line.push("best call " + Number(w.best_call).toFixed(1) + "x");
+    if (w.total_call >= 2) line.push(Math.round(w.total_call) + "x total");
+    if (line.length) traceAdd(line.join(" · "));
+    const a = el("a", "hint");
+    a.href = "/wallet/?a=" + addr;
+    a.textContent = "Full record →";
+    $("#traceBody").appendChild(a);
+    done();
+    return;
+  }
+
+  try { t = await api("/v1/token/" + addr); } catch (e) { t = null; }
+
+  if (t && t.scanned_at && t.peak_mcap > 0 && t.multiple >= 2) {
+    traceAdd("scanned, and it ran", true);
+    traceAdd("$" + (t.symbol || "?") + " · first seen at " + usd(t.first_mcap)
+             + " · peaked at " + usd(t.peak_mcap) + " · "
+             + Number(t.multiple).toFixed(1) + "x");
+    if (t.wallets_seeded) {
+      traceAdd(t.wallets_seeded + " early buyers recorded and scored");
+    }
+  } else if (t && t.scanned_at) {
+    traceAdd("scanned, no run recorded", true);
+    traceAdd("$" + (t.symbol || "?") + " · first seen at " + usd(t.first_mcap)
+             + ". Nothing has happened since, which is not a verdict, only "
+             + "what the record currently holds.");
+  } else {
+    /* Neither knows it, and we do not know which of the two it is. Saying
+       so is the honest answer; guessing "token" and offering a scan was
+       the bug this replaced. */
+    traceAdd("nothing on file for " + shortAddr, true);
+    traceAdd("No token scan and no wallet record. If this is a wallet, it "
+             + "has not turned up early in anything we have recorded yet, "
+             + "which is not a verdict on the wallet.");
     const a = el("a", "hint");
     a.href = "https://t.me/" + BOT + "?start=core_" + addr;
     a.target = "_blank";
-    a.textContent = "Scan it in the bot →";
+    a.textContent = "If it is a token, scan it in the bot →";
     $("#traceBody").appendChild(a);
-  } else if (d.peak_mcap > 0 && d.multiple >= 2) {
-    traceAdd("scanned, and it ran", true);
-    traceAdd("$" + (d.symbol || "?") + " · first seen at "
-             + usd(d.first_mcap) + " · peaked at " + usd(d.peak_mcap)
-             + " · " + Number(d.multiple).toFixed(1) + "x");
-    if (d.wallets_seeded) {
-      traceAdd(d.wallets_seeded + " early buyers recorded and scored");
-    }
-  } else {
-    traceAdd("scanned, no run recorded", true);
-    traceAdd("$" + (d.symbol || "?") + " · first seen at " + usd(d.first_mcap)
-             + ". Nothing has happened since, which is not a verdict, only "
-             + "what the record currently holds.");
   }
-  $("#traceTitle").textContent = "DONE";
-  const dot = $("#trace .dot"); if (dot) dot.style.animation = "none";
+  done();
 }
 
 function mountCommand(onResults) {
@@ -274,7 +311,7 @@ function mountCommand(onResults) {
     if (!text.trim()) return;
     // An address is a lookup, not a question for the language model.
     const t = text.trim();
-    if (ADDR_RE.test(t)) { await lookupToken(t); return; }
+    if (ADDR_RE.test(t)) { await lookupAddress(t); return; }
     $("#go").disabled = true;
     traceReset("WORKING");
     traceAdd("sending to FINNPUTER CORE");
