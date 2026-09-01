@@ -45,8 +45,16 @@ chrome_("/smart-money/"); effects();
 
 function table(rows){
   const t = el("table","tbl");
+  /* Two abilities, side by side.
+     FOUND is what the tokens did after this wallet bought them, whatever
+     it did next. TRADED is what the wallet made. They are different
+     skills: a wallet can buy at $5k, sell at $6k and watch the token
+     reach $500k, and only one of those columns will show it. Following a
+     wallet is about what it BUYS, so both belong on the page. */
   t.innerHTML = `<thead><tr><th>WALLET</th><th>CHAIN</th><th>LABEL</th><th class="n">SCORE</th>
-    <th class="n">TOKENS</th><th class="n">CLOSED</th><th class="n">WIN RATE</th>
+    <th class="n">TOKENS</th><th class="n">BEST CALL</th><th class="n">TOTAL X</th>
+    <th class="n">CALLS</th>
+    <th class="n">CLOSED</th><th class="n">WIN RATE</th>
     <th class="n">NET SOL</th><th class="n">AVG ENTRY</th></tr></thead>`;
   const tb = el("tbody");
   rows.forEach(w => {
@@ -56,10 +64,20 @@ function table(rows){
       <td class="chaincell" data-chain="${w.chain||'solana'}"></td>
       <td style="color:var(--dim)">${(w.label||"").replace(/_/g," ")}</td>
       <td class="n" style="color:${c};font-weight:700">${w.puter_score}${w.measured===false?'<span style="color:var(--gold)">*</span>':""}</td>
-      <td class="n">${w.winners}</td><td class="n">${w.closed_trades}</td>
+      <td class="n">${w.winners}</td>
+      <td class="n" style="color:${(w.best_call||0)>=10?"var(--green)":(w.best_call||0)>=2?"var(--gold)":"var(--dim)"}">${
+        (w.best_call||0) >= 2 ? Number(w.best_call).toFixed(1)+"x" : "\u2014"}</td>
+      <td class="n">${(w.total_call||0) >= 2 ? Math.round(w.total_call)+"x" : "\u2014"}</td>
+      <td class="n">${w.calls || 0}</td>
+      <td class="n">${w.closed_trades}</td>
       <td class="n">${w.win_rate==null?"n/a":w.win_rate+"%"}</td>
       <td class="n" style="color:${(w.net_sol||0)>0?"var(--green)":"var(--red)"}">${(w.net_sol||0).toFixed(1)}</td>
-      <td class="n">${usd(w.avg_entry_mcap)}</td>`;
+      <td class="n">${usd(w.avg_entry_mcap)}</td>
+      <td class="n" style="color:${(w.best_call||0)>=10?"var(--green)":"var(--dim)"}">${
+        (w.best_call||0) >= 2 ? Number(w.best_call).toFixed(1)+"x" : "\u2014"}</td>
+      <td class="n" style="color:${(w.total_call||0)>=25?"var(--green)":"var(--dim)"}">${
+        (w.total_call||0) >= 2 ? Math.round(w.total_call)+"x" : "\u2014"}</td>
+      <td class="n">${w.calls || "\u2014"}</td>`;
     tb.append(tr);
   });
   t.append(tb);

@@ -219,9 +219,62 @@ function traceAdd(text, said) {
   $("#traceBody").scrollTop = 1e6;
 }
 
+/* A pasted contract address is a question about one token, not a query.
+   Somebody who found a token elsewhere and wants to know whether we have
+   seen it should get that answer here, in the box that is already on the
+   page, rather than having to scroll the runner list and hope.
+
+   Three answers are possible and all three are useful: we scanned it and
+   it ran, we scanned it and nothing has happened yet, or we have never
+   seen it. The third is the one that sends somebody into the bot with a
+   token they were already interested in. */
+const ADDR_RE = /^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/;
+
+async function lookupToken(addr) {
+  traceReset("LOOKING UP");
+  traceAdd("checking the archive for " + addr.slice(0, 6) + "…" + addr.slice(-4));
+  let d = null;
+  try {
+    d = await api("/v1/token/" + addr);
+  } catch (e) { d = null; }
+
+  const usd = v => v >= 1e6 ? "$" + (v / 1e6).toFixed(2) + "M"
+                 : v >= 1e3 ? "$" + Math.round(v / 1e3) + "k"
+                 : "$" + Math.round(v || 0);
+
+  if (!d || !d.scanned_at) {
+    traceAdd("not in the archive yet", true);
+    traceAdd("Nothing recorded for this one. Open it in the bot and it "
+             + "becomes part of the record from that moment.");
+    const a = el("a", "hint");
+    a.href = "https://t.me/" + BOT + "?start=core_" + addr;
+    a.target = "_blank";
+    a.textContent = "Scan it in the bot →";
+    $("#traceBody").appendChild(a);
+  } else if (d.peak_mcap > 0 && d.multiple >= 2) {
+    traceAdd("scanned, and it ran", true);
+    traceAdd("$" + (d.symbol || "?") + " · first seen at "
+             + usd(d.first_mcap) + " · peaked at " + usd(d.peak_mcap)
+             + " · " + Number(d.multiple).toFixed(1) + "x");
+    if (d.wallets_seeded) {
+      traceAdd(d.wallets_seeded + " early buyers recorded and scored");
+    }
+  } else {
+    traceAdd("scanned, no run recorded", true);
+    traceAdd("$" + (d.symbol || "?") + " · first seen at " + usd(d.first_mcap)
+             + ". Nothing has happened since, which is not a verdict, only "
+             + "what the record currently holds.");
+  }
+  $("#traceTitle").textContent = "DONE";
+  const dot = $("#trace .dot"); if (dot) dot.style.animation = "none";
+}
+
 function mountCommand(onResults) {
   const run = async text => {
     if (!text.trim()) return;
+    // An address is a lookup, not a question for the language model.
+    const t = text.trim();
+    if (ADDR_RE.test(t)) { await lookupToken(t); return; }
     $("#go").disabled = true;
     traceReset("WORKING");
     traceAdd("sending to FINNPUTER CORE");
