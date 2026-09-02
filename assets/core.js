@@ -164,11 +164,36 @@ function oppCard(o) {
   add(`${o.wallet_count} wallets`, "good");
   add(`avg score ${o.avg_wallet_score}`);
   if (o.market_cap) add(usd(o.market_cap));
+  // What it has done SINCE we first saw it.
+  //
+  // The card showed one market cap and no reference, so a reader could not
+  // tell a token still sitting at its entry from one that had already
+  // tripled. The opportunities page carries this and the home cards did not,
+  // which made the same signal look different in two places.
+  // The entry figure is called_mcap, sealed in puterproof at the moment the
+  // signal fired. There is no first_mcap on this feed; I reached for that
+  // name first and the line would simply never have appeared.
+  if (o.called_mcap && o.market_cap && o.called_mcap > 0) {
+    const mult = o.market_cap / o.called_mcap;
+    if (mult >= 1.1) add(`${mult.toFixed(1)}x since`, "good");
+    else if (mult <= 0.9) add(`${((mult - 1) * 100).toFixed(0)}% since`, "bad");
+  }
   // 100 = safe, 0 = worst, the same scale on every chain. This badge read it
   // upside down: it painted a 92 red and a 10 green, so the safest tokens on
   // the board wore the danger colour. Same inversion as the "risk 92/100"
   // label on the opportunities page, and the same cause: a score that counts
   // safety upward being read as if it counted danger upward.
+  // Did this one go out, or is it site-only.
+  //
+  // The site lists from 45 and the channel posts from 70, so most cards here
+  // never became a message. Without saying which, a reader who follows the
+  // channel cannot reconcile the two lists at all.
+  if (o.posted_at) {
+    add("sent to channel" + (o.posted_mcap ? " at " + usd(o.posted_mcap) : ""),
+        "good");
+  } else {
+    add("site only", "");
+  }
   if (o.risk_score != null) add(`safety ${o.risk_score}`,
     o.risk_score >= 75 ? "good" : o.risk_score >= 50 ? "warn" : "bad");
   (o.unmeasured || []).forEach(u => add(u + " unmeasured", "warn"));

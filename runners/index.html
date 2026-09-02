@@ -132,6 +132,23 @@ function runRow(r){
         ? `${r.wallets_seeded} early buyers recorded and scored`
         : `early buyers not read yet`)
     + `</span>`;
+
+  // Say when we PUBLISHED it, not only when we scanned it.
+  //
+  // Every token here was scanned; only some went out to the channel and to
+  // holders beforehand. Those are the whole claim, and the page gave a
+  // reader no way to tell them apart. A scan is a record. A scan we sent out
+  // before the move is evidence.
+  if (r.posted_at) {
+    const pm = r.posted_mcap ? usd(r.posted_mcap) : null;
+    const px = (r.posted_mcap && r.peak_mcap && r.posted_mcap > 0)
+      ? (r.peak_mcap / r.posted_mcap) : null;
+    arc.innerHTML += `<br><span style="color:var(--green);font-size:12px">`
+      + `sent to the channel ${ago(r.posted_at)} ago`
+      + (pm ? ` at ${pm}` : "")
+      + (px ? ` &rsaquo; ${px.toFixed(1)}x from there` : "")
+      + `</span>`;
+  }
   d.append(arc);
 
   const x = el("div","run-x");

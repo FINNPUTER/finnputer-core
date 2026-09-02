@@ -73,6 +73,16 @@
          identical. The only thing holders get is the ten minutes, and in this
          market that is the part worth having.</p>
     </div>
+  <div class="featnote" style="margin:14px 0 20px">
+    <b>Everything from 45 up is here.</b> The Telegram channel only posts from
+    70, so most of this page never went out as a message. Cards that did are
+    marked, with the market cap at the time.
+    <br><br>
+    <b>Holders get those ten minutes early.</b> $50 worth of $FINNPUTER in
+    your bot wallet and every channel signal reaches you by direct message
+    first. Nothing is withheld from anyone, the public post is identical: the
+    ten minutes is the whole difference.
+  </div>
     <div id="sigs"></div>
   </section>
 
@@ -266,7 +276,15 @@ function signalCard(o){
   // showed an entry price it never had.
   const entry = o.called_mcap != null ? o.called_mcap : o.market_cap;
   s.textContent = "first seen " + ago(o.called_at || o.first_seen) + " ago"
-    + (entry ? " at " + usd(entry) : "");
+    + (entry ? " at " + usd(entry) : "")
+    // Whether it went out as a message, and when. This page lists from 45
+    // and the channel posts from 70, so most cards here never became one.
+    // Saying "site only" is the difference between a reader reconciling the
+    // two lists and concluding they contradict each other.
+    + (o.posted_at
+        ? "  \u00b7  sent to the channel " + ago(o.posted_at) + " ago"
+          + (o.posted_mcap ? " at " + usd(o.posted_mcap) : "")
+        : "  \u00b7  site only, below the channel's bar of 70");
   ft.append(s);
 
   // What became of it. This is the only claim on the page that can be checked
