@@ -132,8 +132,14 @@ p.body code{font-family:var(--mono);font-size:13px;color:var(--green);background
 .tbl .n{text-align:right}
 .scroll{overflow-x:auto;scrollbar-width:thin}
 
+/* Three columns, because there are nine tiles.
+   auto-fit put six across on a wide screen and left three empty cells
+   sitting in a row underneath, which reads as missing data rather than as
+   a layout that ran out of content. Nine divides by three, so three rows
+   come out full. Narrow screens fall back to auto-fit below. */
 .stats{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
   background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+@media(min-width:820px){.stats{grid-template-columns:repeat(3,1fr)}}
 .stat{background:var(--panel);padding:19px 17px}
 .stat b{display:block;font-family:var(--mono);font-size:25px;font-weight:700;color:var(--green)}
 .stat span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.13em;color:var(--faint);margin-top:6px}
