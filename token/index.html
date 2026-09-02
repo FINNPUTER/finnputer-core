@@ -193,7 +193,7 @@ function render(r){
 
   const links = el("div"); links.style.cssText = "margin-top:18px;font-family:var(--mono);font-size:11px";
   links.innerHTML = `<a href="https://solscan.io/token/${r.mint}" target="_blank" rel="noopener">Solscan</a>
-    &nbsp;/&nbsp; <a href="https://dexscreener.com/solana/${r.mint}" target="_blank" rel="noopener">Dexscreener</a>
+    &nbsp;/&nbsp; <a href="https://dexscreener.com/${r.chain || (String(r.mint).startsWith("0x") ? "base" : "solana")}/${r.mint}" target="_blank" rel="noopener">Dexscreener</a>
     &nbsp;/&nbsp; <a href="/how/">How this is measured</a>`;
   out.append(links);
 }
