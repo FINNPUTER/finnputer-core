@@ -74,6 +74,47 @@ function render(w, addr){
   </div>`;
   out.append(d);
 
+  // WHICH tokens, not just how many.
+  //
+  // "163 tokens witnessed" is where early stops being a pattern and starts
+  // being a bot buying everything, and the page gave no way to tell those
+  // apart. The API has carried the list since today; nothing was reading it.
+  //
+  // Two multiples per row, and the gap between them is the whole point: a
+  // wallet early in a 500x that made 2x sold too soon, and that is a
+  // different wallet from one early in a 3x.
+  const toks = w.tokens || [];
+  if (toks.length) {
+    const t = el("div", "card");
+    t.style.cssText = "margin-top:18px";
+    const rows = toks.map(x => {
+      const sym = x.symbol || short(x.mint || "");
+      const tm = x.token_multiple ? Number(x.token_multiple).toFixed(1)+"x" : "\u2014";
+      const wm = x.wallet_multiple ? Number(x.wallet_multiple).toFixed(1)+"x"
+               : (x.realized ? "\u2014" : "<span style='color:var(--faint)'>exit unknown</span>");
+      const rk = x.rank != null ? "#"+x.rank : "\u2014";
+      return `<tr>
+        <td style="padding:6px 10px 6px 0">$${sym}</td>
+        <td style="padding:6px 10px;color:var(--dim)">${rk}</td>
+        <td style="padding:6px 10px;text-align:right;color:var(--green)">${tm}</td>
+        <td style="padding:6px 0 6px 10px;text-align:right">${wm}</td>
+      </tr>`;
+    }).join("");
+    t.innerHTML = `<h3>What it was early in</h3>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 12px">
+        Best first. <b>Token</b> is what the token did after the buy;
+        <b>wallet</b> is what this wallet actually made from it.</p>
+      <table style="width:100%;font-family:var(--mono);font-size:12.5px;border-collapse:collapse">
+        <tr style="color:var(--dim);font-size:11px;letter-spacing:1px">
+          <td style="padding-bottom:6px">TOKEN</td>
+          <td style="padding-bottom:6px">BUYER</td>
+          <td style="padding-bottom:6px;text-align:right">TOKEN</td>
+          <td style="padding-bottom:6px;text-align:right">WALLET</td>
+        </tr>${rows}
+      </table>`;
+    out.append(t);
+  }
+
   const links = el("div");
   links.style.cssText="margin-top:18px;font-family:var(--mono);font-size:11px";
   links.innerHTML = `<a href="${scanLink(w.wallet, w.chain)}" target="_blank" rel="noopener">Verify on explorer</a>
