@@ -131,6 +131,38 @@ function bar(label, val, max) {
   return row;
 }
 
+function plainFinding(o) {
+  const n = o.wallet_count || 0;
+  const parts = [];
+
+  let first = n
+    ? `${n} wallet${n === 1 ? "" : "s"} we rate bought this`
+    : "No rated wallet bought this";
+
+  // The window comes from the buys themselves, which sit in detail. The
+  // API already returns detail as an object; there are no top level
+  // first_buy/last_buy fields and reaching for them would have made this
+  // line silently never appear.
+  const d = o.detail || {};
+  const fb = d.first_buy, lb = d.last_buy;
+  if (n && fb && lb && lb >= fb) {
+    const mins = Math.max(1, Math.round((lb - fb) / 60));
+    first += ` within ${mins} min`;
+  }
+  parts.push(first);
+
+  if (o.avg_wallet_score) parts.push(`average wallet score ${o.avg_wallet_score}`);
+
+  // Only what was verified. unmeasured lists what was not, and a check that
+  // could not run must never read as one that passed.
+  const un = (o.unmeasured || []).map(x => String(x).toLowerCase());
+  if (un.includes("safety")) parts.push("contract not checked on this chain");
+  else if ((o.safety || 0) >= 28) parts.push("contract clean");
+  else if (o.safety) parts.push("contract has flags");
+
+  return parts.join(", ") + ".";
+}
+
 function oppCard(o) {
   const c = el("div", "card");
   c.addEventListener("mousemove", e => {
@@ -138,20 +170,25 @@ function oppCard(o) {
     c.style.setProperty("--mx", (e.clientX - r.left) + "px");
     c.style.setProperty("--my", (e.clientY - r.top) + "px");
   });
-  const col = o.opportunity >= 75 ? "var(--green)" : o.opportunity >= 55 ? "var(--gold)" : "var(--red)";
   const top = el("div", "card-top");
   top.innerHTML =
     `<div><div class="sym">${o.symbol || short(o.mint)}</div>
-       <div class="mint">${short(o.mint)}</div></div>
-     <div class="score" style="color:${col}">${o.opportunity}<small>OPPORTUNITY</small></div>`;
+       <div class="mint">${short(o.mint)}</div></div>`;
   c.append(top);
 
-  const bars = el("div", "bars");
-  bars.append(bar("smart money", o.smart_money, 35));
-  bars.append(bar("safety", o.safety, 35));
-  bars.append(bar("liquidity", o.liquidity, 15));
-  bars.append(bar("momentum", o.momentum, 15));
-  c.append(bars);
+  // What was measured, in a sentence, instead of a number out of 100.
+  //
+  // The card led with a big "61 OPPORTUNITY" and four bars. Nobody could say
+  // what 61 meant, and the number does not predict the outcome: SOLCAT
+  // scored 61 and ran 25.8x, Pumpcat scored 72 and fell 71%. Of twelve
+  // runners that had a score, the best was 67 and the median 53.
+  //
+  // The inputs behind it are checkable and are the interesting part, so the
+  // card says those. The score stays in the API and keeps doing its job as
+  // an internal filter.
+  const finding = el("div", "finding");
+  finding.textContent = plainFinding(o);
+  c.append(finding);
 
   const meta = el("div", "meta");
   const add = (t, cls) => { const s = el("span", "tag" + (cls ? " " + cls : "")); s.textContent = t; meta.append(s); };

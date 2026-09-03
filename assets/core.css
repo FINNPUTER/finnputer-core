@@ -109,6 +109,13 @@ p.body code{font-family:var(--mono);font-size:13px;color:var(--green);background
 .score{font-family:var(--mono);font-size:27px;font-weight:700;line-height:1;text-align:right}
 .score small{display:block;font-size:9px;letter-spacing:.16em;color:var(--faint);font-weight:400;margin-top:4px}
 .bars{display:grid;gap:6px;margin-bottom:13px}
+/* The sentence that replaced the score and the four bars.
+   The card used to lead with a number out of 100 that nobody could act on
+   and that does not predict the outcome. It says what was measured instead,
+   so this has to read as a sentence, not as a caption: body size, normal
+   line height, and the same bottom margin the bars had so the cards keep
+   their rhythm. */
+.finding{font-size:13px;line-height:1.5;color:var(--ink);margin-bottom:13px}
 .bar{display:grid;grid-template-columns:74px 1fr 34px;align-items:center;gap:9px;
   font-family:var(--mono);font-size:10.5px;color:var(--dim)}
 .bar i{display:block;height:4px;border-radius:3px;background:#131c26;overflow:hidden}
