@@ -1,0 +1,328 @@
+/* FINNPUTER CORE - shared styles. One file, every page. */
+:root{
+  --bg:#06080d; --panel:#0a0f17; --line:#16202b;
+  --ink:#e8eef0; --dim:#7b8c94; --faint:#54636b;
+  --green:#19e8a0; --red:#ff5470; --gold:#ffce6a;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Space Grotesk',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+a{color:inherit}
+
+/* Aurora. Deliberately faint: it is a glow at the edges, not a wash over the
+   text. At the previous opacity the whole top half went green and the
+   headline lost its contrast, which is the opposite of what a precision
+   instrument should look like. */
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora i{position:absolute;display:block;border-radius:50%;filter:blur(130px);opacity:.11;
+  animation:drift 26s ease-in-out infinite alternate}
+.aurora i:nth-child(1){width:46vw;height:46vw;left:-18vw;top:-20vw;background:var(--green)}
+.aurora i:nth-child(2){width:34vw;height:34vw;right:-16vw;top:2vw;background:#2b6cff;opacity:.08;animation-duration:32s}
+.aurora i:nth-child(3){width:30vw;height:30vw;left:38vw;top:58vw;background:var(--gold);opacity:.06;animation-duration:38s}
+/* Keeps the centre of the page near black whatever the blobs do. */
+.aurora::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% 30%,#06080d 35%,transparent 100%)}
+@keyframes drift{to{transform:translate3d(6vw,-5vw,0) scale(1.16)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.03;
+  background-image:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px)}
+
+.wrap{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:0 20px 96px}
+
+nav{position:sticky;top:14px;z-index:20;display:flex;align-items:center;gap:6px;
+  margin:14px auto 0;padding:7px 8px;width:max-content;max-width:100%;
+  border:1px solid rgba(255,255,255,.09);border-radius:999px;
+  background:rgba(10,15,23,.66);backdrop-filter:blur(16px) saturate(150%);
+  box-shadow:0 8px 34px rgba(0,0,0,.5);overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav b{font-family:var(--mono);font-size:12px;letter-spacing:.10em;padding:0 12px;
+  color:var(--green);white-space:nowrap;text-decoration:none}
+nav a{font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--dim);
+  padding:7px 13px;border-radius:999px;transition:.18s;white-space:nowrap}
+nav a:hover,nav a:focus-visible{color:var(--ink);background:rgba(255,255,255,.07)}
+nav a.on{color:var(--ink);background:rgba(25,232,160,.12)}
+
+header{padding:64px 0 20px}
+header.mid{text-align:center;padding-top:74px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.30em;color:var(--faint);margin-bottom:18px}
+h1{font-size:clamp(34px,6.4vw,66px);line-height:1;letter-spacing:-.035em;margin:0 0 16px;font-weight:700}
+h1.shine{background:linear-gradient(100deg,#fff 20%,var(--green) 42%,#fff 64%,var(--green) 84%,#fff 100%);
+  background-size:280% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shine 11s linear infinite}
+@keyframes shine{to{background-position:280% 0}}
+.sub{color:var(--dim);font-size:16px;max-width:560px;line-height:1.6;margin:0 0 30px}
+header.mid .sub{margin-left:auto;margin-right:auto}
+
+.cmd{display:flex;gap:10px;padding:9px;border-radius:16px;border:1px solid var(--line);
+  background:rgba(10,15,23,.78);backdrop-filter:blur(12px);
+  box-shadow:0 0 0 1px rgba(25,232,160,.06),0 20px 60px rgba(0,0,0,.55);transition:.25s}
+.cmd:focus-within{border-color:rgba(25,232,160,.45);box-shadow:0 0 0 1px rgba(25,232,160,.22),0 20px 60px rgba(0,0,0,.6)}
+.cmd input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--ink);
+  font-family:var(--mono);font-size:14px;padding:13px 12px}
+.cmd input::placeholder{color:var(--faint)}
+.cmd button{border:0;border-radius:11px;background:var(--green);color:#04120c;cursor:pointer;
+  font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.09em;padding:0 22px;transition:.18s}
+.cmd button:hover{filter:brightness(1.12)}
+.cmd button:disabled{opacity:.45;cursor:wait}
+.hints{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+header.mid .hints{justify-content:center}
+.hint{font-family:var(--mono);font-size:11px;color:var(--dim);cursor:pointer;background:transparent;
+  border:1px solid var(--line);border-radius:999px;padding:6px 12px;transition:.18s}
+.hint:hover{color:var(--green);border-color:rgba(25,232,160,.35)}
+
+.trace{margin-top:24px;border:1px solid var(--line);border-radius:14px;background:#04070b;
+  font-family:var(--mono);font-size:12.5px;overflow:hidden;display:none;text-align:left}
+.trace.on{display:block}
+.trace-hd{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);
+  color:var(--faint);font-size:11px;letter-spacing:.12em}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.trace-body{padding:12px 14px;max-height:230px;overflow:auto}
+.trace-body div{padding:3px 0;color:var(--dim);opacity:0;animation:step .3s ease forwards}
+.trace-body div::before{content:'> ';color:var(--green)}
+.trace-body div.said{color:var(--ink)}
+.trace-body div.said::before{content:'  '}
+@keyframes step{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+
+section{margin-top:64px}
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+h2{font-size:13px;font-family:var(--mono);letter-spacing:.20em;color:var(--green);margin:0;font-weight:500}
+h3{font-size:17px;margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
+.shead p{margin:0;font-size:12.5px;color:var(--faint);max-width:460px}
+p.body{color:var(--dim);line-height:1.7;font-size:14.5px;max-width:660px}
+p.body b{color:var(--ink);font-weight:600}
+p.body code{font-family:var(--mono);font-size:13px;color:var(--green);background:rgba(25,232,160,.07);
+  padding:2px 6px;border-radius:5px}
+
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--panel);
+  padding:17px;overflow:hidden;transition:border-color .22s,transform .22s}
+.card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(25,232,160,.11),transparent 62%)}
+.card:hover{border-color:rgba(25,232,160,.28);transform:translateY(-2px)}
+.card:hover::before{opacity:1}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
+.sym{font-family:var(--mono);font-size:15px;font-weight:700}
+.mint{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:3px}
+.score{font-family:var(--mono);font-size:27px;font-weight:700;line-height:1;text-align:right}
+.score small{display:block;font-size:9px;letter-spacing:.16em;color:var(--faint);font-weight:400;margin-top:4px}
+.bars{display:grid;gap:6px;margin-bottom:13px}
+/* The sentence that replaced the score and the four bars.
+   The card used to lead with a number out of 100 that nobody could act on
+   and that does not predict the outcome. It says what was measured instead,
+   so this has to read as a sentence, not as a caption: body size, normal
+   line height, and the same bottom margin the bars had so the cards keep
+   their rhythm. */
+.finding{font-size:13px;line-height:1.5;color:var(--ink);margin-bottom:13px}
+.bar{display:grid;grid-template-columns:74px 1fr 34px;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.bar i{display:block;height:4px;border-radius:3px;background:#131c26;overflow:hidden}
+.bar i b{display:block;height:100%;background:var(--green);border-radius:3px;width:0;
+  transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bar u{text-decoration:none;text-align:right;color:var(--ink)}
+.bar.na u{color:var(--faint)}
+.bar.na i b{background:#2a3542}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:999px;
+  border:1px solid var(--line);color:var(--dim)}
+.tag.warn{color:var(--gold);border-color:rgba(255,206,106,.32)}
+.tag.bad{color:var(--red);border-color:rgba(255,84,112,.32)}
+.tag.good{color:var(--green);border-color:rgba(25,232,160,.30)}
+
+.tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.tbl th{text-align:left;font-weight:400;color:var(--faint);font-size:10px;letter-spacing:.13em;
+  padding:0 12px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid #0e1620;white-space:nowrap}
+.tbl tr:hover td{background:rgba(255,255,255,.022)}
+.tbl .n{text-align:right}
+.scroll{overflow-x:auto;scrollbar-width:thin}
+
+/* Three columns, because there are nine tiles.
+   auto-fit put six across on a wide screen and left three empty cells
+   sitting in a row underneath, which reads as missing data rather than as
+   a layout that ran out of content. Nine divides by three, so three rows
+   come out full. Narrow screens fall back to auto-fit below. */
+.stats{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
+  background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+@media(min-width:820px){.stats{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--panel);padding:19px 17px}
+.stat b{display:block;font-family:var(--mono);font-size:25px;font-weight:700;color:var(--green)}
+.stat span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.13em;color:var(--faint);margin-top:6px}
+
+.empty{border:1px dashed var(--line);border-radius:14px;padding:30px 22px;text-align:center;
+  font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:1.7}
+.empty b{color:var(--ink);display:block;margin-bottom:7px;font-weight:500}
+
+.note{border-left:2px solid var(--gold);padding:2px 0 2px 16px;margin:22px 0;
+  color:var(--dim);font-size:14px;line-height:1.7;max-width:660px}
+.note b{color:var(--gold);font-weight:600}
+
+.steps{counter-reset:s;display:grid;gap:14px;margin-top:8px}
+.step{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px;
+  position:relative;counter-increment:s}
+.step::before{content:counter(s,decimal-leading-zero);position:absolute;top:16px;right:18px;
+  font-family:var(--mono);font-size:11px;color:var(--faint)}
+.step p{margin:0;color:var(--dim);font-size:14px;line-height:1.65;max-width:620px}
+
+.reveal{opacity:0;transform:translateY(18px)}
+.reveal.in{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1)}
+.spark{position:fixed;width:5px;height:5px;border-radius:50%;background:var(--green);pointer-events:none;z-index:99}
+
+footer{margin-top:84px;padding-top:26px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--faint);
+  display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
+footer a{text-decoration:none}
+footer a:hover{color:var(--green)}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+}
+
+/* ── Nav mark ─────────────────────────────────────────────── */
+nav img.mark{height:22px;width:auto;display:block;margin:0 2px 0 8px}
+
+/* ── The four verbs ───────────────────────────────────────── */
+.verbs{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  background:var(--line);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;margin-top:44px;text-align:left}
+.verb{background:var(--panel);padding:20px 18px;position:relative;overflow:hidden;
+  transition:background .25s}
+.verb:hover{background:#0d141d}
+.verb b{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.20em;
+  color:var(--green);margin-bottom:9px;font-weight:500}
+.verb span{display:block;font-size:13.5px;color:var(--dim);line-height:1.6}
+.verb i{position:absolute;top:18px;right:18px;font-family:var(--mono);font-size:10px;
+  color:var(--faint);font-style:normal}
+
+/* ── Live ticker. Hidden until there is something real to show. ── */
+.ticker{display:none;margin-top:26px;border:1px solid var(--line);border-radius:999px;
+  background:rgba(4,7,11,.7);backdrop-filter:blur(10px);overflow:hidden;
+  font-family:var(--mono);font-size:11.5px}
+.ticker.on{display:block}
+.ticker-in{display:flex;align-items:center;gap:26px;padding:11px 18px;white-space:nowrap;
+  animation:slide 34s linear infinite}
+.ticker:hover .ticker-in{animation-play-state:paused}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-in span{color:var(--dim)}
+.ticker-in span b{color:var(--green);font-weight:500}
+.ticker-in span u{text-decoration:none;color:var(--gold)}
+.ticker-live{display:inline-flex;align-items:center;gap:7px;color:var(--faint);
+  letter-spacing:.14em;font-size:10px}
+
+/* ── Ecosystem table ──────────────────────────────────────── */
+.eco{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;margin-top:6px}
+.eco a{display:grid;grid-template-columns:150px 1fr auto;gap:18px;align-items:baseline;
+  background:var(--panel);padding:15px 18px;text-decoration:none;transition:background .2s}
+.eco a:hover{background:#0d141d}
+.eco a:hover .eco-go{color:var(--green)}
+.eco-name{font-family:var(--mono);font-size:12.5px;color:var(--ink);letter-spacing:.04em}
+.eco-what{font-size:13.5px;color:var(--dim);line-height:1.55}
+.eco-go{font-family:var(--mono);font-size:10.5px;color:var(--faint);
+  white-space:nowrap;transition:color .2s}
+.eco-tag{display:inline-block;font-family:var(--mono);font-size:9.5px;
+  border:1px solid var(--line);border-radius:999px;padding:2px 7px;
+  color:var(--faint);margin-left:8px;vertical-align:middle}
+.eco-tag.live{color:var(--green);border-color:rgba(25,232,160,.30)}
+@media (max-width:640px){
+  .eco a{grid-template-columns:1fr;gap:6px}
+  .eco-go{display:none}
+}
+
+/* ── Mobile nav ───────────────────────────────────────────────
+   The pill nav ran off the right edge on a phone: the last two links were
+   simply unreachable. Below 720px it becomes a burger that opens a full
+   list, which is the only layout that fits five links plus a mark. */
+.burger{display:none;background:none;border:0;cursor:pointer;padding:7px 12px;
+  font-family:var(--mono);font-size:16px;color:var(--dim);line-height:1}
+.burger:hover{color:var(--ink)}
+@media (max-width:720px){
+  /* Brand left, burger right.
+     It was the other way round, which is backwards from every app a phone
+     user has open, so the first thing they do is look in the wrong corner.
+     The closed bar is a single row; opening it turns the pill into a panel
+     with the links stacked and separated, rather than a list squeezed into
+     a rounded strip. */
+  nav{width:auto;margin:0;justify-content:space-between;flex-wrap:wrap;
+    overflow:visible;padding:10px 14px}
+  /* The brand is an <a class="always">, not a <b>: styling nav b did nothing
+     and left the burger sitting on the left with the brand beside it. */
+  nav a.always{order:1;margin-right:auto;display:block}
+  .burger{display:block;order:2;font-size:22px;line-height:1;
+    padding:4px 6px;background:none;border:0;color:var(--ink);cursor:pointer}
+  nav a{order:3}
+  nav a:not(.always){display:none}
+
+  nav.open{border-radius:16px;padding-bottom:8px}
+  nav.open a{display:block;width:100%;text-align:left;
+    padding:13px 12px;border-radius:10px;font-size:15px;
+    border-top:1px solid var(--line)}
+  nav.open a:first-of-type{margin-top:8px}
+  /* The brand stays a plain title inside an open menu, not another row. */
+  nav.open a.always{border-top:0;margin-top:0;padding-left:0;
+    font-size:15px;width:auto}
+  /* The page underneath keeps scrolling past an open menu otherwise, so the
+     menu slides away under the finger while it is being read. */
+  nav.open{position:relative;z-index:40}
+}
+
+/* ── Chain marks ──────────────────────────────────────────────
+   A coloured badge by default, replaced by a real logo file the moment one
+   exists at /assets/chains/<chain>.png. Built this way on purpose: hotlinking
+   someone else's CDN means your page breaks when they reorganise, and
+   embedding brand logos you have no licence for is a different problem again.
+   The badge always renders, so nothing is ever missing. */
+.chip{display:inline-flex;align-items:center;gap:6px;vertical-align:middle}
+.chip i{width:15px;height:15px;border-radius:50%;display:inline-block;
+  font-family:var(--mono);font-size:8px;font-weight:700;line-height:15px;
+  text-align:center;color:#04070b;font-style:normal;flex:0 0 auto;
+  background-size:cover;background-position:center}
+.chip span{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.chip.sm i{width:12px;height:12px;font-size:7px;line-height:12px}
+.chip.lg i{width:20px;height:20px;font-size:10px;line-height:20px}
+
+/* background-color, NOT background.
+   The shorthand resets background-image, and since these rules come after
+   the .chip i block they were wiping out the logo the moment it loaded. The
+   colour is only the fallback for a logo that is missing or still in
+   flight; it must not erase the one that arrived. */
+.chip i.c-solana   {background-color:#9945FF;color:#fff}
+.chip i.c-base     {background-color:#0052FF;color:#fff}
+.chip i.c-robinhood{background-color:#00C805;color:#04070b}
+.chip i.c-stable   {background-color:#1BA27A;color:#fff}
+.chip i.c-ethereum {background-color:#e8eef0;color:#04070b}
+.chip i.c-unknown  {background-color:#2a3542;color:var(--dim)}
+
+.chains-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px}
+
+/* ── Filter buttons ───────────────────────────────────────────
+   Named .filt, not .chip: .chip is the chain badge, and reusing the class
+   would make one restyle the other by accident. */
+.filt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  background:var(--panel);color:var(--dim);border:1px solid var(--line);
+  border-radius:999px;padding:7px 14px;cursor:pointer;transition:all .18s}
+.filt:hover{color:var(--ink);border-color:rgba(25,232,160,.3)}
+.filt.on{color:var(--green);border-color:rgba(25,232,160,.45);
+  background:rgba(25,232,160,.07)}
+
+
+/* ── Orientation strip ────────────────────────────────────────
+   Four pages that all look like "tokens to look at" from the nav
+   alone: Signals, Live buys, Runners, Smart money. A visitor who
+   cannot tell which answers which question clicks one, decides the
+   site repeats itself, and leaves. Each tile therefore leads with
+   the QUESTION, not with the feature name. ── */
+.orient{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+  gap:10px;margin:0 0 22px}
+.orient a{display:block;border:1px solid var(--line);border-radius:12px;
+  padding:14px 15px;background:var(--panel);transition:border-color .15s}
+.orient a:hover{border-color:var(--green)}
+.orient .tag{display:inline-block;font-size:10.5px;letter-spacing:1px;
+  color:var(--green);margin-bottom:7px}
+.orient .q{display:block;font-size:13.5px;color:var(--ink);font-weight:600;
+  line-height:1.35;margin-bottom:5px}
+.orient .w{display:block;font-size:12px;color:var(--dim);line-height:1.5}
+.orient a.here{border-color:var(--green);background:var(--panel2)}
