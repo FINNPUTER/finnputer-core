@@ -350,7 +350,16 @@ mountCommand(d => {
 });
 
 loadOpps(); loadStats(); loadTicker();
-setInterval(loadOpps, 60000);
+// Every 30 seconds, not 60.
+//
+// The live market cap on each card is read by the API at request time, so
+// this interval IS the update rate the reader sees. A minute is long enough
+// for a small token to move twice, and a badge marked live that lags by a
+// minute is worse than one that does not claim to be live at all.
+//
+// The API caches for 60s per token, so halving this costs no extra lookups
+// on the same token, only a lighter page render.
+setInterval(loadOpps, 30000);
 setInterval(loadTicker, 120000);
 </script>
 </body>

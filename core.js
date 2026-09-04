@@ -199,7 +199,19 @@ function oppCard(o) {
   cw.append(chainChip(o.chain, { size: "sm" }));
   meta.append(cw);
   add(`${o.wallet_count} wallets`, "good");
-  add(`avg score ${o.avg_wallet_score}`);
+  // Only when there is one.
+  //
+  // 04.09.2026: three Robinhood cards read "avg score null". Wallet scoring
+  // runs on Solana, so an EVM signal has no average to show, and the badge
+  // printed the missing value rather than standing down. A reader sees a
+  // field that does not apply and reads it as a broken product.
+  //
+  // The score is our own unit anyway and means nothing to anyone outside
+  // this codebase, so when it IS there it goes last, behind the numbers a
+  // person can judge on their own.
+  if (o.avg_wallet_score != null && o.avg_wallet_score > 0) {
+    add(`avg score ${o.avg_wallet_score}`);
+  }
   // The market cap NOW, not the one from the scan.
   //
   // o.market_cap is written once, when the token was scanned, and never
@@ -214,7 +226,17 @@ function oppCard(o) {
   // than as the stale number wearing a "now" label.
   const liveMc = (o.live_market_cap != null && o.live_market_cap > 0)
     ? o.live_market_cap : null;
-  if (liveMc) add(usd(liveMc) + " now", "");
+  if (liveMc) {
+    // Marked as live, and it is: the page reloads this feed every 60
+    // seconds and the API reads the figure fresh on each request. Without
+    // the dot the badge looks like one more stored number, which is
+    // exactly what the old one was.
+    const t = el("span", "tag");
+    t.textContent = "\u25cf " + usd(liveMc) + " now";
+    t.title = "Live. Updates about once a minute.";
+    t.style.cssText = "color:var(--accent,#00e08a)";
+    meta.append(t);
+  }
   else if (o.market_cap) add(usd(o.market_cap) + " at scan", "");
 
   // What it has done SINCE we first saw it.
@@ -242,10 +264,20 @@ function oppCard(o) {
   // never became a message. Without saying which, a reader who follows the
   // channel cannot reconcile the two lists at all.
   if (o.posted_at) {
-    add("sent to channel" + (o.posted_mcap ? " at " + usd(o.posted_mcap) : ""),
-        "good");
+    // WHEN, not only at what price.
+    //
+    // The badge said "sent to channel at $343k" and the card said "$348k
+    // now", and a reader had no way to tell whether those two numbers were
+    // ten minutes or two days apart. The whole claim of this page is that
+    // we said something before it moved, and the timestamp is the half of
+    // that claim which was missing.
+    add("sent to channel " + ago(o.posted_at) + " ago"
+        + (o.posted_mcap ? " at " + usd(o.posted_mcap) : ""), "good");
   } else {
-    add("site only", "");
+    // Site-only cards still deserve a date. first_seen is when the signal
+    // was formed, which is what a reader is comparing the live price to.
+    add("site only" + (o.first_seen ? ", seen " + ago(o.first_seen) + " ago"
+                       : ""), "");
   }
   if (o.risk_score != null) add(`safety ${o.risk_score}`,
     o.risk_score >= 75 ? "good" : o.risk_score >= 50 ? "warn" : "bad");
