@@ -200,18 +200,34 @@ function oppCard(o) {
   meta.append(cw);
   add(`${o.wallet_count} wallets`, "good");
   add(`avg score ${o.avg_wallet_score}`);
-  if (o.market_cap) add(usd(o.market_cap));
+  // The market cap NOW, not the one from the scan.
+  //
+  // o.market_cap is written once, when the token was scanned, and never
+  // moves. So the card showed "sent to channel at $343k" beside a badge
+  // reading $343k, and a reader could not tell whether that was five
+  // minutes or five hours old. The one card that showed a change had a
+  // proof row behind it with a different entry figure; the rest had nothing
+  // to compare against and silently looked flat.
+  //
+  // live_market_cap is read by the API at request time and cached for a
+  // minute. null means the lookup failed, and that is shown as such rather
+  // than as the stale number wearing a "now" label.
+  const liveMc = (o.live_market_cap != null && o.live_market_cap > 0)
+    ? o.live_market_cap : null;
+  if (liveMc) add(usd(liveMc) + " now", "");
+  else if (o.market_cap) add(usd(o.market_cap) + " at scan", "");
+
   // What it has done SINCE we first saw it.
   //
-  // The card showed one market cap and no reference, so a reader could not
-  // tell a token still sitting at its entry from one that had already
-  // tripled. The opportunities page carries this and the home cards did not,
-  // which made the same signal look different in two places.
-  // The entry figure is called_mcap, sealed in puterproof at the moment the
-  // signal fired. There is no first_mcap on this feed; I reached for that
-  // name first and the line would simply never have appeared.
-  if (o.called_mcap && o.market_cap && o.called_mcap > 0) {
-    const mult = o.market_cap / o.called_mcap;
+  // Measured against the entry, which is called_mcap when a proof row
+  // exists and the scan figure otherwise, and always against the LIVE
+  // number rather than against another copy of the entry.
+  const entryMc = (o.called_mcap && o.called_mcap > 0)
+    ? o.called_mcap
+    : ((o.posted_mcap && o.posted_mcap > 0) ? o.posted_mcap : null);
+  const nowMc = liveMc || o.market_cap || null;
+  if (entryMc && nowMc) {
+    const mult = nowMc / entryMc;
     if (mult >= 1.1) add(`${mult.toFixed(1)}x since`, "good");
     else if (mult <= 0.9) add(`${((mult - 1) * 100).toFixed(0)}% since`, "bad");
   }

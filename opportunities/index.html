@@ -166,8 +166,18 @@ function signalCard(o){
   const sym = el("span","sig-sym");
   sym.textContent = "$" + (o.symbol || short(o.mint));
   hd.append(sym, chainChip(o.chain || "solana", {size:"sm"}));
-  if(o.market_cap){
-    const m = el("span","tag"); m.textContent = usd(o.market_cap); hd.append(m);
+  // The market cap NOW, not the one from the scan.
+  //
+  // o.market_cap is written once, at scan time, and never moves. The header
+  // therefore showed a number with no date on it, next to a footer that
+  // said "first seen 1h ago at $149k", and a reader had no way to tell the
+  // two apart. live_market_cap is read by the API at request time.
+  const liveMc = (o.live_market_cap != null && o.live_market_cap > 0)
+    ? o.live_market_cap : null;
+  if(liveMc || o.market_cap){
+    const m = el("span","tag");
+    m.textContent = liveMc ? usd(liveMc) + " now" : usd(o.market_cap) + " at scan";
+    hd.append(m);
   }
   const sc = el("div","sig-score");
   sc.innerHTML = pct(o.opportunity) + "<small>OPPORTUNITY</small>";
