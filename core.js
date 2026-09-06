@@ -239,19 +239,27 @@ function oppCard(o) {
   }
   else if (o.market_cap) add(usd(o.market_cap) + " at scan", "");
 
-  // What it has done SINCE we first saw it.
+  // What it has done SINCE we first saw it, and SINCE WHAT.
   //
-  // Measured against the entry, which is called_mcap when a proof row
-  // exists and the scan figure otherwise, and always against the LIVE
-  // number rather than against another copy of the entry.
+  // The multiple was rendered on its own: SOLCAT read "32.4x since" next to
+  // "site only, seen 4d ago" and the starting figure appeared nowhere on the
+  // card. A visitor cannot check a multiple whose denominator is invisible,
+  // and an unverifiable 32x reads as marketing, which is the opposite of
+  // what this page is for. The number was in the payload the whole time.
+  //
+  // The anchor now travels inside the badge, so it cannot be separated from
+  // the claim by a line break or a redesign.
   const entryMc = (o.called_mcap && o.called_mcap > 0)
     ? o.called_mcap
-    : ((o.posted_mcap && o.posted_mcap > 0) ? o.posted_mcap : null);
+    : ((o.posted_mcap && o.posted_mcap > 0)
+        ? o.posted_mcap
+        : ((o.market_cap && o.market_cap > 0) ? o.market_cap : null));
   const nowMc = liveMc || o.market_cap || null;
   if (entryMc && nowMc) {
     const mult = nowMc / entryMc;
-    if (mult >= 1.1) add(`${mult.toFixed(1)}x since`, "good");
-    else if (mult <= 0.9) add(`${((mult - 1) * 100).toFixed(0)}% since`, "bad");
+    if (mult >= 1.1) add(`${mult.toFixed(1)}x since ${usd(entryMc)}`, "good");
+    else if (mult <= 0.9)
+      add(`${((mult - 1) * 100).toFixed(0)}% since ${usd(entryMc)}`, "bad");
   }
   // 100 = safe, 0 = worst, the same scale on every chain. This badge read it
   // upside down: it painted a 92 red and a 10 green, so the safest tokens on
@@ -271,13 +279,19 @@ function oppCard(o) {
     // ten minutes or two days apart. The whole claim of this page is that
     // we said something before it moved, and the timestamp is the half of
     // that claim which was missing.
-    add("sent to channel " + ago(o.posted_at) + " ago"
+    add("posted in the channel " + ago(o.posted_at) + " ago"
         + (o.posted_mcap ? " at " + usd(o.posted_mcap) : ""), "good");
+    // And when the entry was never written down, say that instead of
+    // leaving a gap where a number belongs. A missing figure that looks
+    // like a design choice is how a data hole survives for weeks.
+    if (!o.posted_mcap) add("entry price not recorded", "warn");
   } else {
-    // Site-only cards still deserve a date. first_seen is when the signal
-    // was formed, which is what a reader is comparing the live price to.
-    add("site only" + (o.first_seen ? ", seen " + ago(o.first_seen) + " ago"
-                       : ""), "");
+    // "site only" was our own shorthand. A first-time visitor reads it as a
+    // category of token rather than as a statement about where it was
+    // published, which is the one thing it means.
+    add("not posted in the channel"
+        + (o.first_seen ? ", first seen " + ago(o.first_seen) + " ago" : "")
+        + (entryMc ? " at " + usd(entryMc) : ""), "");
   }
   if (o.risk_score != null) add(`safety ${o.risk_score}`,
     o.risk_score >= 75 ? "good" : o.risk_score >= 50 ? "warn" : "bad");
@@ -502,8 +516,34 @@ async function loadTicker() {
   try {
     const d = await api("/v1/opportunities?limit=6");
     (d.opportunities || []).forEach(o => {
-      items.push(`<span><b>${o.wallet_count} wallets</b> converging on `
-        + `${o.symbol || short(o.mint)} &middot; opportunity <u>${o.opportunity}</u></span>`);
+      // "4 wallets converging on OTC, opportunity 85" named three things a
+      // visitor cannot use. OTC is a ticker with no context, and the
+      // opportunity score is our own unit on a scale nobody outside this
+      // codebase knows, so 85 could be excellent or barely passing. Neither
+      // told anyone what happened.
+      //
+      // What happened is: this many wallets, this close together, and the
+      // price then against the price now. Every part of that is checkable.
+      const sym = o.symbol || short(o.mint);
+      const det = o.detail || {};
+      const mins = (det.first_buy && det.last_buy && det.last_buy >= det.first_buy)
+        ? Math.max(1, Math.round((det.last_buy - det.first_buy) / 60)) : null;
+      const entry = (o.called_mcap > 0) ? o.called_mcap
+        : ((o.posted_mcap > 0) ? o.posted_mcap
+          : ((o.market_cap > 0) ? o.market_cap : null));
+      const now = (o.live_market_cap > 0) ? o.live_market_cap : null;
+
+      const bits = [`<b>${sym}</b>`];
+      if (o.wallet_count) {
+        bits.push(`${o.wallet_count} wallet${o.wallet_count === 1 ? "" : "s"}`
+          + (mins ? ` in ${mins} min` : ""));
+      }
+      // Both figures, or the one we have. Never a multiple on its own.
+      if (entry && now) bits.push(`${usd(entry)} &rarr; ${usd(now)}`);
+      else if (entry) bits.push(`from ${usd(entry)}`);
+      const when = o.posted_at || o.first_seen;
+      if (when) bits.push(`${ago(when)} ago`);
+      items.push(`<span>${bits.join(" &middot; ")}</span>`);
     });
   } catch (e) {}
 
@@ -512,7 +552,10 @@ async function loadTicker() {
     (p.proofs || []).slice(0, 6).forEach(x => {
       const m = x.multiple || 1;
       if (m >= 1.2) {
-        items.push(`<span>sealed <b>${x.symbol || short(x.mint)}</b> at `
+        // "sealed" is our word for the hash over the record. It says nothing
+        // to a reader and it is not the interesting part; the two prices
+        // are.
+        items.push(`<span><b>${x.symbol || short(x.mint)}</b> logged at `
           + `${usd(x.mcap_at_call)} &middot; peak <u>${m.toFixed(2)}x</u></span>`);
       }
     });

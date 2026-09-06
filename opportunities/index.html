@@ -294,7 +294,7 @@ function signalCard(o){
     + (o.posted_at
         ? "  \u00b7  sent to the channel " + ago(o.posted_at) + " ago"
           + (o.posted_mcap ? " at " + usd(o.posted_mcap) : "")
-        : "  \u00b7  site only, below the channel's bar of 70");
+        : "  \u00b7  not posted in the channel, below its bar of 70");
   ft.append(s);
 
   // What became of it. This is the only claim on the page that can be checked
