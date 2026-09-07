@@ -70,7 +70,20 @@ function render(w, addr){
     ${r("best rank", w.best_rank??"n/a")}
     ${r("bundle sightings", w.bundled_tokens)}
     ${r("gifted positions", w.gifted_positions)}
-    ${r("rug exposure", w.rug_exposure_pct==null?"n/a":w.rug_exposure_pct+"%")}
+    ${r("rug exposure", (function(){
+        // A share needs a denominator worth dividing by.
+        //
+        // One sighting that our scanner flagged risky printed "100%", which
+        // reads as a verdict on the wallet rather than as one observation.
+        // Every other row on this page already says n/a on evidence this
+        // thin. When the count is too small to score on, show the count.
+        if (w.rug_exposure_counted === false
+            && (w.rug_exposure_touched || 0) > 0) {
+          return w.rug_exposure_risky + " of " + w.rug_exposure_touched
+                 + ", too few to score on";
+        }
+        return w.rug_exposure_pct == null ? "n/a" : w.rug_exposure_pct + "%";
+      })())}
   </div>`;
   out.append(d);
 
