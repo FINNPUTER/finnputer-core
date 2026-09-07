@@ -114,8 +114,30 @@
 </section>
 
 <section class="reveal">
-  <div class="shead"><h2>WHAT THE ENGINE KNOWS</h2><p id="coverage"></p></div>
+  <div class="shead"><h2>WHAT THE ENGINE HAS SEEN</h2><p id="coverage"></p></div>
   <div class="stats" id="stats"></div>
+</section>
+
+<!--
+  The published record, kept apart from the block above on purpose.
+
+  Those tiles count what the scanner WITNESSED: every token that ran, whether
+  we posted it or not. So "typical runner 4.5x" is the median of things that
+  already ran, and next to "best we published" it reads like our own result.
+  It is not. Our median is far lower, because ours is measured over every
+  signal, including the ones that went nowhere.
+
+  Two populations, one panel, and only one label told them apart. This is the
+  half that is a claim about us, so it stands on its own and says what it is.
+-->
+<section class="reveal">
+  <div class="shead">
+    <h2>WHAT WE PUBLISHED</h2>
+    <p>Measured over every signal we sent, including the ones that went
+      nowhere. A hit rate counted only over the winners is not a hit rate.</p>
+  </div>
+  <div class="stats" id="record"></div>
+  <p class="body" id="recordNote" style="opacity:.7"></p>
 </section>
 
 <section class="reveal">
@@ -349,7 +371,74 @@ mountCommand(d => {
   }
 });
 
-loadOpps(); loadStats(); loadTicker();
+async function loadRecord(){
+  const box = $("#record");
+  const note = $("#recordNote");
+  try{
+    const d = await api("/v1/track-record?days=90");
+
+    // solo and signal are wallet-driven; scan is a token that passed the
+    // safety bar with no wallet behind it. Blending them hides which one
+    // works, and it is the wallet half that this product is actually about.
+    const rows = [
+      ["solo",   d.solo   || {}, "WALLET SIGNALS"],
+      ["signal", d.signal || {}, "CONVERGENCE"],
+      ["scan",   d.scan   || {}, "SCANNER PICKS"],
+    ].filter(([, v]) => Number(v.measured || 0) > 0);
+
+    if (!rows.length){ box.innerHTML=""; note.textContent=""; return; }
+
+    // A percentage needs a sample worth dividing by.
+    //
+    // Seven convergence signals, all seven above 2x, prints "100%". That is
+    // arithmetic, not a result, and on a page whose whole argument is
+    // honesty it is the single most damaging tile we could show. Below the
+    // floor the counts go up instead, which says the same thing without
+    // claiming more than it can.
+    const MIN = 20;
+
+    box.innerHTML = "";
+    rows.forEach(([, v, label]) => {
+      const s = el("div","stat");
+      const n = Number(v.measured || 0);
+      if (n >= MIN) {
+        s.innerHTML = `<b>${Number(v.hit_rate_2x || 0).toFixed(0)}%</b>`
+          + `<span>${label} REACHED 2x</span>`;
+      } else {
+        const hits = Math.round(n * Number(v.hit_rate_2x || 0) / 100);
+        s.innerHTML = `<b>${hits}/${n}</b>`
+          + `<span>${label} REACHED 2x</span>`;
+      }
+      box.append(s);
+    });
+    rows.forEach(([, v, label]) => {
+      const s = el("div","stat");
+      s.innerHTML = `<b>${Number(v.median || 0).toFixed(2)}x</b>`
+        + `<span>${label}, TYPICAL</span>`;
+      box.append(s);
+    });
+
+    // How many the figures rest on, and how many are still unchecked.
+    // A percentage without its sample size is a number nobody can weigh,
+    // and leaving out the unmeasured ones would quietly flatter the rest.
+    const meas = rows.reduce((a,[,v]) => a + Number(v.measured||0), 0);
+    const sent = rows.reduce((a,[,v]) => a + Number(v.signals||0), 0);
+    const s2 = el("div","stat");
+    s2.innerHTML = `<b>${meas}</b><span>SIGNALS MEASURED, OF ${sent}</span>`;
+    box.append(s2);
+
+    // The sentence that keeps the number honest. Every figure here is a
+    // PEAK: the highest the token reached after we posted it. Nobody sells
+    // at the peak, so this is what the token did, not what anyone made.
+    note.textContent = "These are peaks reached after publication, not "
+      + "exits. We record what the token did, not what anyone made. "
+      + "Signals we have not re-checked count as unmeasured, never as "
+      + "misses. Groups under 20 measured signals show counts rather than "
+      + "a percentage. Last 90 days.";
+  }catch(e){ box.innerHTML=""; note.textContent=""; }
+}
+
+loadOpps(); loadStats(); loadRecord(); loadTicker();
 // Every 30 seconds, not 60.
 //
 // The live market cap on each card is read by the API at request time, so
