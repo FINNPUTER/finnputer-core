@@ -16,7 +16,7 @@
 <header>
   <div class="eyebrow">WALLET RANKING</div>
   <h1>Who is actually<br>good at this.</h1>
-  <p class="sub">Early in tokens we watched run, and they closed the trade. Paper gains earn nothing. Bundlers are labelled and capped at 25, whatever their numbers look like.</p>
+  <p class="sub">Ranked by how many tokens a wallet was early in that later ran. Closing the trade earns more, but most exits are unknown to us and the table says so rather than guessing. Bundlers are labelled and capped at 25, whatever their numbers look like.</p>
   <div class="cmd">
     <input id="q" autocomplete="off" spellcheck="false" placeholder="show me the best wallets you know">
     <button id="go">RUN</button>
@@ -54,8 +54,8 @@ function table(rows){
      reach $500k, and only one of those columns will show it. Following a
      wallet is about what it BUYS, so both belong on the page. */
   t.innerHTML = `<thead><tr><th>WALLET</th><th>CHAIN</th><th>LABEL</th><th class="n">SCORE</th>
-    <th class="n">TOKENS</th><th class="n">BEST CALL</th><th class="n">TOTAL X</th>
-    <th class="n">CALLS</th>
+    <th class="n" title="Tokens this wallet was early in that later ran">RUNNERS</th><th class="n">BEST CALL</th><th class="n">TOTAL X</th>
+    <th class="n" title="Buys we recorded for this wallet, runners and others">BUYS</th>
     <th class="n" title="Positions we have seen this wallet close">CLOSED</th><th class="n" title="Of the closed positions, how many were up. Blank means we never saw an exit.">WIN RATE</th>
     <th class="n">NET SOL</th><th class="n">AVG ENTRY</th></tr></thead>`;
   const tb = el("tbody");
@@ -115,14 +115,27 @@ async function load(){
     show(d.wallets);
     const s = await api("/v1/stats");
     const known = s.wallets_scored || 0;
-    if (known > (d.wallets || []).length) {
-      const n = el("div");
-      n.style.cssText = "padding:10px 2px;font-family:var(--mono);font-size:11px;color:var(--faint)";
-      n.textContent = `${known} wallets scored in total. `
-        + `${known - d.wallets.length} are hidden because they are labelled as `
-        + `bundlers or as having been handed their position, and those are never ranked.`;
-      $("#box").append(n);
+    const shown = (d.wallets || []).length;
+    // Say what is shown, and do not invent a reason for the rest.
+    //
+    // This used to read "103,091 are hidden because they are labelled as
+    // bundlers". They are not. The request asks for a hundred rows and
+    // every other wallet was simply not fetched. A display limit was
+    // published as a verdict on a hundred thousand addresses.
+    const n = el("div");
+    n.style.cssText = "padding:10px 2px;font-family:var(--mono);font-size:11px;color:var(--faint)";
+    const eligible = d.eligible;
+    if (eligible != null && eligible > shown) {
+      n.textContent = `Showing the top ${shown} of ${eligible.toLocaleString()} `
+        + `wallets that qualify for this ranking, out of ${known.toLocaleString()} `
+        + `scored. Wallets labelled as bundlers, as having been handed their `
+        + `position, or as infrastructure are never ranked, and neither are `
+        + `wallets whose best call is below the floor.`;
+    } else {
+      n.textContent = `${known.toLocaleString()} wallets scored. `
+        + `Ranked here: ${shown}.`;
     }
+    $("#box").append(n);
   }
   catch(e){ $("#box").innerHTML=""; $("#box").append(emptyBox("CORE API not reachable.","Check the API constant in /assets/core.js.")); }
 }
