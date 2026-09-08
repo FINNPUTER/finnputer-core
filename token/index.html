@@ -61,11 +61,27 @@ function render(r){
        ${mk.liquidity ? `<span class="tag">${usd(mk.liquidity)} liq</span>` : ""}
        ${risk.level ? `<span class="tag ${rs>=50?"bad":rs>=25?"warn":"good"}">${risk.level}</span>` : ""}
        ${r.depth ? `<span class="tag">${r.depth} scan</span>` : ""}
-       ${r._cache === "hit" ? `<span class="tag">cached</span>` : ""}
+       ${r._cache === "hit"
+          ? `<span class="tag">cached ${Math.round((r.cached_age_sec||0)/60)} min ago</span>`
+            + `<button class="tag" id="rescan" style="cursor:pointer;border:0">rescan now</button>`
+          : ""}
      </div>`;
   out.append(head);
   const ct = head.querySelector(".chaintag");
   if (ct) ct.append(chainChip(r.chain, { size: "sm" }));
+
+  // Rescan, skipping the cache. Same code path as a normal scan, one flag
+  // different, so there is no second scanner to keep in step.
+  const rb = head.querySelector("#rescan");
+  if (rb) rb.addEventListener("click", () => {
+    window.__fresh = true;
+    // The field on this page is #mint. #q is the command box on the other
+    // pages, and reading the wrong one meant the button silently did
+    // nothing at all.
+    const q = $("#mint");
+    const _m = (q && q.value) || (r && r.mint) || "";
+    if (_m) { run(_m); } else { window.__fresh = false; }
+  });
 
   const cr = r.chain_resolution;
   if (cr && cr.alternatives && cr.alternatives.length){
@@ -250,11 +266,19 @@ async function run(mint){
 
     traceAdd("running FINNPUTER safety engine");
     traceAdd("this takes up to 90 seconds on a first scan");
+    // A scan repeated inside the cache window returned the same report and
+    // the page looked broken. The cache is right to exist, a deep scan
+    // costs real API calls, but somebody watching a token move has to be
+    // able to say "no, now". window.__fresh is set by the Rescan button.
     const body = chain ? {mint, depth:"deep", chain} : {mint, depth:"deep"};
+    if (window.__fresh) { body.fresh = true; window.__fresh = false; }
     const r = await api("/v1/scan", {method:"POST", body: JSON.stringify(body)});
     $("#traceTitle").textContent = "DONE";
     const d = $("#trace .dot"); if (d) d.style.animation = "none";
-    traceAdd(r._cache === "hit" ? "served from cache" : "scan complete", true);
+    traceAdd(r._cache === "hit"
+      ? "served from cache, " + Math.round((r.cached_age_sec || 0) / 60)
+        + " min old"
+      : "scan complete", true);
     render(r);
     history.replaceState(null,"","/token/?m="+encodeURIComponent(mint));
   }catch(e){
