@@ -74,10 +74,17 @@ function chrome_(active) {
   $(".wrap").prepend(nav);
 
   const f = el("footer");
+  // Legal notice and privacy notice, in the shared footer so every page
+  // carries them. The privacy notice is not optional decoration: the Intel
+  // Partner Showcase terms require a written, publicly available privacy
+  // policy before anything can be published there, and every payment
+  // provider and app store asks the same question.
   f.innerHTML = '<span>FINNPUTER CORE / read only / nothing here moves funds</span>' +
     '<span><a href="/how/">How it works</a> / ' +
     '<a href="https://x402.finnputerdex.com">Agent API</a> / ' +
-    '<a href="https://hub.finnputerdex.com">Ecosystem</a></span>';
+    '<a href="https://hub.finnputerdex.com">Ecosystem</a> / ' +
+    '<a href="/imprint/">Legal</a> / ' +
+    '<a href="/privacy/">Privacy</a></span>';
   $(".wrap").appendChild(f);
 }
 
