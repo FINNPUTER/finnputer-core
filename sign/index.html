@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign a message | FINNPUTER CORE</title>
+<meta name="description" content="Prove a wallet is yours. Connect, sign, copy. Nothing moves and no gas is spent.">
+<meta name="robots" content="noindex,follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<style>
+  textarea{width:100%;min-height:110px;background:#0c0f14;color:var(--fg);
+    border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    font-family:var(--mono);font-size:12.5px;line-height:1.6;resize:vertical}
+  .btn{display:inline-block;background:var(--accent);color:#06090d;border:0;
+    border-radius:10px;padding:12px 20px;font-family:var(--mono);
+    font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.03em}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+  .out{background:#0c0f14;border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;font-family:var(--mono);font-size:12.5px;
+    word-break:break-all;line-height:1.6;min-height:20px}
+  .msg{font-family:var(--mono);font-size:12px;color:var(--faint);margin:8px 0}
+  .err{color:#f87171}
+  .okc{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mid">
+  <div class="eyebrow">WALLET</div>
+  <h1>Prove it is yours.</h1>
+  <p class="sub">Connect, sign the text the bot gave you, copy the signature back. Signing moves nothing, costs no gas, and grants no permission over your funds.</p>
+</header>
+
+<section class="reveal">
+  <div class="shead"><h2>1. PASTE THE TEXT FROM THE BOT</h2></div>
+  <p class="body">Exactly as it was sent. One extra space and the check fails.</p>
+  <textarea id="msg" spellcheck="false" placeholder="Paste the block the bot sent you"></textarea>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>2. CONNECT AND SIGN</h2></div>
+  <div class="row">
+    <button class="btn" id="phantom">Phantom</button>
+    <button class="btn" id="solflare">Solflare</button>
+    <button class="btn ghost" id="backpack">Backpack</button>
+  </div>
+  <div class="msg" id="status"></div>
+  <div class="msg">Wallet: <span id="addr">not connected</span></div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>3. COPY THIS BACK TO THE BOT</h2></div>
+  <div class="out" id="sig">—</div>
+  <div class="row">
+    <button class="btn ghost" id="copy" disabled>Copy signature</button>
+  </div>
+  <p class="body">Paste it into the chat as a normal message. That is the last
+    step.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHY THIS PAGE EXISTS</h2></div>
+  <p class="body">Phantom has a Sign Message screen in its developer
+    settings. Several wallets, Solflare among them, have no such screen at
+    all, so the only way through was a browser console. That is not a step
+    anyone should have to take to prove an address is theirs.</p>
+  <p class="body">This page runs entirely in your browser. The text and the
+    signature are never sent anywhere. There is no server behind it.</p>
+</section>
+
+</div>
+
+<script src="/assets/core.js"></script>
+<script>
+chrome_("/sign/"); effects();
+
+// base58, because that is what Solana signatures are normally written in.
+// The bot accepts base64 and hex too, but a reader who has seen a signature
+// before expects this one.
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function toBase58(bytes){
+  const digits = [0];
+  for (let i = 0; i < bytes.length; i++){
+    let carry = bytes[i];
+    for (let j = 0; j < digits.length; j++){
+      carry += digits[j] << 8;
+      digits[j] = carry % 58;
+      carry = (carry / 58) | 0;
+    }
+    while (carry > 0){ digits.push(carry % 58); carry = (carry / 58) | 0; }
+  }
+  let s = "";
+  for (let i = 0; i < bytes.length && bytes[i] === 0; i++) s += "1";
+  for (let i = digits.length - 1; i >= 0; i--) s += B58[digits[i]];
+  return s;
+}
+
+const $$ = id => document.getElementById(id);
+function say(text, cls){
+  const el = $$("status");
+  el.className = "msg" + (cls ? " " + cls : "");
+  el.textContent = text;
+}
+
+// Each wallet exposes itself differently, and the provider is not always at
+// the top level: Backpack puts it under window.backpack.solana. Checking
+// both shapes is cheaper than telling the user their wallet is missing when
+// it is installed.
+function provider(kind){
+  if (kind === "phantom")
+    return (window.phantom && window.phantom.solana) || window.solana;
+  if (kind === "solflare") return window.solflare;
+  if (kind === "backpack")
+    return (window.backpack && window.backpack.solana) || window.backpack;
+  return null;
+}
+
+async function sign(kind){
+  const text = ($$("msg").value || "");
+  if (!text.trim()){
+    say("Paste the text from the bot first.", "err");
+    return;
+  }
+  const p = provider(kind);
+  if (!p){
+    say(kind + " was not found in this browser. Install it, or try another "
+        + "button.", "err");
+    return;
+  }
+  try {
+    say("Waiting for the wallet…");
+    if (!p.isConnected) await p.connect();
+    const pk = p.publicKey || (p.publicKey && p.publicKey.toString);
+    $$("addr").textContent = pk ? pk.toString() : "connected";
+
+    // The message is signed as the EXACT bytes of what was pasted. Not
+    // trimmed, not normalised: the bot checks the text it sent, and a
+    // helpful cleanup here would break the very thing it is meant to prove.
+    const bytes = new TextEncoder().encode(text);
+    const res = await p.signMessage(bytes, "utf8");
+
+    // Wallets return either the raw bytes or an object with .signature.
+    const raw = (res && res.signature) ? res.signature : res;
+    const arr = raw instanceof Uint8Array ? raw : new Uint8Array(raw);
+    if (!arr || arr.length !== 64){
+      say("That wallet returned something unexpected (" +
+          (arr ? arr.length : 0) + " bytes, expected 64).", "err");
+      return;
+    }
+    $$("sig").textContent = toBase58(arr);
+    $$("copy").disabled = false;
+    say("Signed. Copy it below and paste it into the chat.", "okc");
+  } catch (e){
+    // A rejected prompt is not a failure worth alarming anyone about.
+    const m = (e && e.message) || String(e);
+    say(/reject|denied|cancel/i.test(m)
+        ? "You cancelled the signature."
+        : "That did not work: " + m, "err");
+  }
+}
+
+$$("phantom").addEventListener("click", () => sign("phantom"));
+$$("solflare").addEventListener("click", () => sign("solflare"));
+$$("backpack").addEventListener("click", () => sign("backpack"));
+$$("copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($$("sig").textContent);
+    say("Copied.", "okc");
+  } catch (e){
+    say("Could not copy automatically. Select the text and copy it.", "err");
+  }
+});
+</script>
+</body>
+</html>

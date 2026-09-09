@@ -82,6 +82,7 @@ function chrome_(active) {
   f.innerHTML = '<span>FINNPUTER CORE / read only / nothing here moves funds</span>' +
     '<span><a href="/how/">How it works</a> / ' +
     '<a href="/bot/">Using the bot</a> / ' +
+    '<a href="/sign/">Sign</a> / ' +
     '<a href="/api/">API</a> / ' +
     '<a href="https://hub.finnputerdex.com">Ecosystem</a> / ' +
     '<a href="/imprint/">Legal</a> / ' +
