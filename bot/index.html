@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using the bot | FINNPUTER CORE</title>
+<meta name="description" content="How to use the FINNPUTER trading bot: funding, scanning, buying, exits, auto-buy and withdrawing.">
+<meta name="robots" content="index,follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<style>
+  .step{border-left:2px solid var(--accent);padding:2px 0 2px 16px;margin:16px 0}
+  .step h3{font-size:15px;margin:0 0 6px;letter-spacing:.01em}
+  .step p{font-size:14px;color:var(--faint);line-height:1.6;margin:0 0 6px}
+  .warn{border:1px solid var(--line);border-left:3px solid #d97706;
+        border-radius:8px;padding:12px 14px;margin:14px 0;
+        font-size:13.5px;color:var(--faint);line-height:1.6}
+  code{font-family:var(--mono);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mid">
+  <div class="eyebrow">USING THE BOT</div>
+  <h1>What every button<br>actually does.</h1>
+  <p class="sub">The bot holds a wallet for you on five chains, scans any address you paste, and can trade on its own while you are away. This page is the whole thing, in order.</p>
+</header>
+
+<section class="reveal">
+  <div class="shead"><h2>FIRST FIVE MINUTES</h2></div>
+
+  <div class="step">
+    <h3>1. Open it</h3>
+    <p>Start the bot in Telegram. A wallet is created for you on each chain
+      the moment you do. Nobody else is asked and nothing is imported.</p>
+  </div>
+
+  <div class="step">
+    <h3>2. Send funds to the right address</h3>
+    <p>The main menu shows one address and names the chain it belongs to.
+      The Solana address and the EVM address are different, and sending to
+      the wrong one is the most common first mistake. Switch chain with the
+      SOL / BASE / ETH / RH / STABLE row, then copy the address that appears.</p>
+    <p>The menu lists every chain and what it holds, so you can see where
+      your money is without switching.</p>
+  </div>
+
+  <div class="step">
+    <h3>3. Keep gas on the EVM chains</h3>
+    <p>Base, Ethereum, Robinhood and Stable pay gas in ETH, on that chain's
+      own address. A sell is two transactions there, an approve and the swap,
+      so a position can be unsellable while the balance still shows a value.
+      A small amount of ETH per chain is enough.</p>
+  </div>
+
+  <div class="step">
+    <h3>4. Paste an address</h3>
+    <p>Any token address, in the chat. The bot works out which chain trades
+      it, scans it, and shows you who bought: clusters, funding between the
+      early buyers, fresh wallets, holder concentration, liquidity. Buy
+      buttons are underneath.</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>READING A SCAN</h2></div>
+  <p class="body">The safety score is the token: contract flags, holder
+    spread, bundling. It is not a prediction and a high score is not a
+    recommendation.</p>
+  <p class="body">The line that matters more is the one about buyers.
+    <em>"2 of the first 22 buyers are wallets we score"</em> means somebody
+    with a record is in early. <em>"None of the first 30 buyers has a record
+    with us"</em> means the token passed the checks and nobody we rate has
+    touched it. Both are findings. Neither is a call.</p>
+  <p class="body">A check that could not run is reported as unchecked, never
+    as a pass. If liquidity could not be read, it says so instead of showing
+    zero.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>BUYING AND SELLING</h2></div>
+  <p class="body">Buy from a scan or from the Buy button. Sell from
+    Positions: pick a percentage or type your own. Slippage is under
+    Settings and applies to every trade.</p>
+  <p class="body">The fee is 0.8% per trade. Nothing else is charged.</p>
+  <p class="body"><strong>Positions</strong> shows what you hold on every
+    chain, the entry where the bot recorded one, and the profit or loss. A
+    position that arrived by transfer rather than through the bot has no
+    recorded entry, and the screen says so rather than inventing one.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>TRADING WHILE YOU ARE AWAY</h2></div>
+  <p class="body">Auto-buy is the whole point of the bot for most people. It
+    buys on signals without you, inside limits you set.</p>
+
+  <div class="step">
+    <h3>Budget and size</h3>
+    <p>The budget is a hard stop: nothing is bought beyond it, ever. Size per
+      signal is what each trade costs. Both are in dollars. The budget is a
+      cap you set, not your balance.</p>
+  </div>
+
+  <div class="step">
+    <h3>Which alerts</h3>
+    <p>Three kinds. <strong>Wallet buys</strong> is one rated wallet buying.
+      <strong>Convergence</strong> is several agreeing at once, the rarest
+      and strongest. <strong>Scanner picks</strong> is a token that passed
+      the bar with no rated wallet behind it, and it is off by default: over
+      our own record it was tradeable 28.6% of the time against 35.5% for
+      wallet buys, and produced six of the seven heavy losses.</p>
+  </div>
+
+  <div class="step">
+    <h3>Minimum safety score and chains</h3>
+    <p>Nothing under the score is bought. Chains you switch off are never
+      bought on. A signal where the holder distribution or the cluster check
+      could not run is never bought automatically, whatever the score says.</p>
+  </div>
+
+  <div class="step">
+    <h3>The way out</h3>
+    <p>Every automatic buy gets an exit plan, and you choose which.</p>
+    <p><strong>Ladder</strong>: 1.5x, 1.9x, 3x, 5x, 10x, each selling a
+      quarter of what is left, so 23.7% is still running after the last step.
+      Best average over our record. It gives back a fifth of the peak on the
+      way out, because a trailing stop follows the high.</p>
+    <p><strong>Half at 2x</strong>: half out at 2x so the stake is back, the
+      rest runs with a stop 20% under the best price reached.</p>
+    <p><strong>All at 2x</strong>: everything out, nothing left running. A
+      token that goes to 60x pays the same as one that reaches 2x and stops.</p>
+    <p>Changing the plan applies to new buys. A position already open keeps
+      the plan it was opened with, because two plans on one position would
+      sell it down twice as fast as either describes.</p>
+  </div>
+
+  <div class="warn">Start smaller than feels interesting. Set a budget you
+    would not mind losing entirely, watch the first few trades one by one,
+    and raise it only after you have seen it behave. This is memecoin
+    trading and most tokens go to zero.</div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>THE REST OF THE MENU</h2></div>
+  <p class="body"><strong>Orders</strong> are your open take profits and
+    stops. Selling a position in full clears its plan automatically.</p>
+  <p class="body"><strong>Copy Trade</strong> follows a wallet you choose and
+    buys what it buys, inside limits you set.</p>
+  <p class="body"><strong>Alerts</strong> is price alerts on tokens you pick.
+    Which chains you receive signals from is under Settings.</p>
+  <p class="body"><strong>Bridge</strong> moves funds between the chains the
+    bot supports.</p>
+  <p class="body"><strong>Withdraw</strong> sends to any address you own.
+    Pick the chain first: the address format is checked against it, twice.</p>
+  <p class="body"><strong>Wallet</strong> exports your private key. It is
+    your wallet and you can take it anywhere. Nobody from FINNPUTER will
+    ever ask you for it.</p>
+  <p class="body"><strong>Tax Export</strong> is your trade history as a
+    file.</p>
+  <p class="body"><strong>Earn 30%</strong> pays you 30% of the fees from
+    anyone who joins through your link.</p>
+  <p class="body"><strong>My Signal Record</strong> is what the signals you
+    were sent actually did. Including the ones that went nowhere.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>HOLDING $FINNPUTER</h2></div>
+  <p class="body">Holders of $50 or more get every signal ten minutes before
+    the channel. That is the only thing holding changes: the same signals,
+    earlier.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT IT WILL NOT DO</h2></div>
+  <p class="body">It will not tell you what to buy. Every alert says the same
+    sentence: a token passed the scanner's bar at this moment, with the
+    numbers that got it there, and what happens next is not something anyone
+    knows.</p>
+  <p class="body">It will not hide a bad outcome. Follow-ups are posted as
+    replies to the original message, which is never edited, and the record
+    counts everything.</p>
+  <p class="body">It cannot make an illiquid position sellable. If a pool is
+    empty, the exchange refuses the trade and the bot says so rather than
+    pretending the number on your screen is reachable.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>NONE OF THIS IS ADVICE</h2></div>
+  <p class="body">Nothing here is financial advice, an offer or a
+    recommendation. You trade your own funds from your own wallet and you are
+    responsible for what you do with them. Most memecoins go to zero.</p>
+</section>
+
+</div>
+
+<script src="/assets/core.js"></script>
+<script>chrome_("/bot/"); effects();</script>
+</body>
+</html>

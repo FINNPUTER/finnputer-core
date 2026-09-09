@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API | FINNPUTER CORE</title>
+<meta name="description" content="Onchain wallet intelligence over HTTP. Read the buyers before you buy, from your own code or from an agent.">
+<meta name="robots" content="index,follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<style>
+  .ep{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+  .ep .m{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+  .ep .p{font-family:var(--mono);font-size:14px;font-weight:700;margin:2px 0 6px}
+  .ep .d{font-size:13px;color:var(--faint);line-height:1.5}
+  pre.code{background:#0c0f14;border:1px solid var(--line);border-radius:10px;
+           padding:14px 16px;overflow-x:auto;font-family:var(--mono);
+           font-size:12.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mid">
+  <div class="eyebrow">API</div>
+  <h1>Read the buyers,<br>from your own code.</h1>
+  <p class="sub">The same engine behind the scanner, over HTTP. Wallet scores across five chains, cluster and funding detection, and the full record of what we published. JSON, no SDK, no signup to try it.</p>
+</header>
+
+<section class="reveal">
+  <div class="shead"><h2>BASE URL</h2></div>
+  <pre class="code">https://api.finnputerdex.com</pre>
+  <p class="body">Every response is JSON. CORS is open, so a browser can call
+    it directly. No key is needed to start: unkeyed callers share a daily
+    allowance, which is enough to try everything here and not enough to run
+    a product on.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>THE ONE THAT MATTERS</h2></div>
+  <p class="body">Everything else is a lookup. This is the call that does the
+    work: it reads the token, the holders, the clusters and the funding
+    relationships between the early buyers, and tells you which of them have
+    a record with us.</p>
+  <pre class="code">curl -X POST https://api.finnputerdex.com/v1/scan \
+  -H "content-type: application/json" \
+  -d '{"mint":"E3HSQRoXC34RVPWYYDuxm4cNBspwBaVRSqBnRdEFpump","depth":"deep"}'</pre>
+  <p class="body">A deep scan takes up to 90 seconds the first time and is
+    cached for 15 minutes. Pass <code>"fresh": true</code> to skip the cache.
+    The chain is worked out by asking which one actually trades the address,
+    so you do not have to know it.</p>
+  <p class="body">A check we could not run comes back as unmeasured, never as
+    a pass. That distinction is the whole point: an absent measurement and a
+    clean result are different answers, and most scanners return the same
+    thing for both.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>ENDPOINTS</h2></div>
+
+  <div class="ep"><div class="m">POST</div><div class="p">/v1/scan</div>
+    <div class="d">Full analysis of one token. Body: mint, depth (quick or
+      deep), optional chain, optional fresh.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/scan/cached</div>
+    <div class="d">The cached report only, or cached:false. Never starts a
+      scan, so it is safe to call per row on a page.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/wallet/{address}</div>
+    <div class="d">One wallet: score, label, how many tokens it was early in
+      that later ran, and what we have seen it close.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/smart-money</div>
+    <div class="d">The wallet ranking. Bundlers, handed positions and
+      infrastructure are labelled and never ranked.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/token/{mint}/smart-money</div>
+    <div class="d">Which rated wallets bought this token, with size and
+      timestamp. The agent question: is anyone good in here.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/opportunities</div>
+    <div class="d">Live convergence: several independent rated wallets
+      buying the same token inside one window.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/runners</div>
+    <div class="d">Tokens we witnessed run, with entry and peak.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/signals</div>
+    <div class="d">What we published, newest first, with a cursor. kind is
+      solo (one rated wallet), signal (several agreeing) or scan (passed the
+      bar with no rated wallet behind it). peak_multiple is null until the
+      follow-up has re-checked it, never 0.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/track-record</div>
+    <div class="d">What we published and what it did. The same figures the
+      site shows, including the ones that went nowhere.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/buys</div>
+    <div class="d">Recent buys by rated wallets. Add /tokens for the same
+      data grouped by token.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/resolve</div>
+    <div class="d">Which chain actually trades an address.</div></div>
+
+  <div class="ep"><div class="m">GET</div><div class="p">/v1/stats</div>
+    <div class="d">How many wallets are scored, how many tokens scanned.
+      Useful as a health check.</div></div>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>KEYS AND LIMITS</h2></div>
+  <p class="body">Send a key as <code>x-api-key</code> when you need more than
+    the shared allowance. A deep scan costs more than a lookup because it
+    costs us more: a cached one is charged at a tenth.</p>
+  <pre class="code">curl https://api.finnputerdex.com/v1/smart-money \
+  -H "x-api-key: YOUR_KEY"</pre>
+  <p class="body">For a key, or for a volume that does not fit the standard
+    allowance, write to <a href="mailto:partners@finnputerdex.com">partners@finnputerdex.com</a>.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>REACTING TO SIGNALS WHILE YOU ARE AWAY</h2></div>
+  <p class="body">Two feeds, and which one you want depends on how early you
+    need to be. <code>/v1/signals</code> is what we published, the same thing
+    the channel gets. <code>/v1/buys</code> is a step earlier: every rated
+    wallet buy we see, including the ones that never become a signal.</p>
+  <p class="body">Both take a cursor. The response
+    carries <code>cursor</code>, the timestamp of the newest row in it. Pass
+    it back as <code>since</code> on the next call and nothing arrives twice,
+    so a loop on a VPS needs no memory of its own.</p>
+  <pre class="code">cursor=0
+while true; do
+  r=$(curl -s "https://api.finnputerdex.com/v1/signals?since=$cursor")
+  echo "$r" | jq -c '.signals[]'       # act on each new signal
+  cursor=$(echo "$r" | jq -r '.cursor')
+  sleep 30
+done</pre>
+  <p class="body"><code>chain</code> and <code>kind</code> narrow it
+    further.</p>
+  <p class="body">Swap <code>/v1/signals</code> for
+    <code>/v1/buys?min=50</code> to work from the raw wallet buys instead.
+    There you also want <code>min</code>, the wallet score floor: without it
+    you are reading every rated buy rather than the ones with a record
+    behind them.</p>
+  <p class="body">Thirty seconds is a reasonable loop. Faster costs you
+    allowance and buys little: the alert and the chain are the slow parts,
+    not the poll.</p>
+  <p class="body">Push, rather than polling, is the better answer and does
+    not exist yet. If you want a webhook, say so and say what shape you need
+    it in. We would rather build the one that fits a real integration than
+    guess at it.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>FOR AGENTS</h2></div>
+  <p class="body">The endpoints are plain HTTP GET and POST with JSON bodies,
+    which is what a tool-calling agent wants: no SDK, no session, no signing.
+    A machine-payable endpoint is available at
+    <code>api.finnputerdex.com</code> for callers that settle per request
+    rather than holding a key.</p>
+  <p class="body">If you are wiring this into an agent and something in the
+    shape of a response makes that harder than it should be, say so. We would
+    rather change it than have you work around it.</p>
+</section>
+
+<section class="reveal">
+  <div class="shead"><h2>WHAT THIS IS NOT</h2></div>
+  <p class="body">Read only. Nothing here moves funds, holds funds or
+    executes a trade. Nothing on this page is financial advice, an offer or a
+    recommendation. Figures come from public chain data and third party price
+    sources and can be wrong, incomplete or out of date.</p>
+</section>
+
+</div>
+
+<script src="/assets/core.js"></script>
+<script>chrome_("/api/"); effects();</script>
+</body>
+</html>

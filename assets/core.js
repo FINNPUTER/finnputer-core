@@ -81,7 +81,8 @@ function chrome_(active) {
   // provider and app store asks the same question.
   f.innerHTML = '<span>FINNPUTER CORE / read only / nothing here moves funds</span>' +
     '<span><a href="/how/">How it works</a> / ' +
-    '<a href="https://x402.finnputerdex.com">Agent API</a> / ' +
+    '<a href="/bot/">Using the bot</a> / ' +
+    '<a href="/api/">API</a> / ' +
     '<a href="https://hub.finnputerdex.com">Ecosystem</a> / ' +
     '<a href="/imprint/">Legal</a> / ' +
     '<a href="/privacy/">Privacy</a></span>';
