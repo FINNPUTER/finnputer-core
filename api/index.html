@@ -170,9 +170,11 @@ done</pre>
   <p class="body">The same data is an MCP server. Add it once and ask Claude
     things like "is this token bundled?" or "what did FINNPUTER publish
     today?", and the answer comes from these numbers.</p>
-  <pre class="code">https://api.finnputerdex.com/mcp</pre>
+  <pre class="code">https://mcp.finnputerdex.com/mcp</pre>
   <p class="body">In Claude: Connectors, the plus button, then a name and this
-    URL. No key, no login. Four tools, all read only:
+    URL. Opened in a browser it answers "405 Method Not Allowed", which is
+    correct: MCP clients talk to it by POST. No key, no login. Four tools,
+    all read only:
     <code>scan_token</code>, <code>recent_signals</code>,
     <code>wallet_score</code> and <code>track_record</code>.</p>
   <p class="body">A scan through the connector returns the quick scan plus
