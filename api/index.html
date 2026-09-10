@@ -124,7 +124,9 @@
   <div class="shead"><h2>REACTING TO SIGNALS WHILE YOU ARE AWAY</h2></div>
   <p class="body">Two feeds, and which one you want depends on how early you
     need to be. <code>/v1/signals</code> is what we published, the same thing
-    the channel gets. <code>/v1/buys</code> is a step earlier: every rated
+    the channel gets and at the same moment: after the 10 minute head start
+    holders have. With a holder key in <code>X-Api-Key</code> it is live.
+    <code>/v1/buys</code> is a step earlier: every rated
     wallet buy we see, including the ones that never become a signal.</p>
   <p class="body">Both take a cursor. The response
     carries <code>cursor</code>, the timestamp of the newest row in it. Pass
@@ -177,6 +179,10 @@ done</pre>
     all read only:
     <code>scan_token</code>, <code>recent_signals</code>,
     <code>wallet_score</code> and <code>track_record</code>.</p>
+  <p class="body">Holders of $50 of $FINNPUTER get a free key in the bot,
+    under 🔑 Claude key. Add it in the connector as a request header named
+    <code>X-Api-Key</code>: signals then arrive live instead of after the
+    head start, with your own deep scans each day.</p>
   <p class="body">A scan through the connector returns the quick scan plus
     the latest deep scan anyone already ran. New deep scans are shared
     across all connector users and limited per day, because each one reads
