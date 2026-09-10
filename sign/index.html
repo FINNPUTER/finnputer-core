@@ -26,6 +26,11 @@
   .msg{font-family:var(--mono);font-size:12px;color:var(--faint);margin:8px 0}
   .err{color:#f87171}
   .okc{color:var(--accent)}
+  .btn img{width:18px;height:18px;border-radius:4px;vertical-align:-4px;
+    margin-right:9px}
+  .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .none{font-family:var(--mono);font-size:12.5px;color:var(--dim);margin:6px 0}
+  .out.empty{color:var(--faint)}
 </style>
 </head>
 <body>
@@ -45,18 +50,14 @@
 
 <section class="reveal">
   <div class="shead"><h2>2. CONNECT AND SIGN</h2></div>
-  <div class="row">
-    <button class="btn" id="phantom">Phantom</button>
-    <button class="btn" id="solflare">Solflare</button>
-    <button class="btn ghost" id="backpack">Backpack</button>
-  </div>
+  <div class="row" id="wallets"></div>
   <div class="msg" id="status"></div>
   <div class="msg">Wallet: <span id="addr">not connected</span></div>
 </section>
 
 <section class="reveal">
   <div class="shead"><h2>3. COPY THIS BACK TO THE BOT</h2></div>
-  <div class="out" id="sig">—</div>
+  <div class="out empty" id="sig">Nothing signed yet.</div>
   <div class="row">
     <button class="btn ghost" id="copy" disabled>Copy signature</button>
   </div>
@@ -108,66 +109,192 @@ function say(text, cls){
   el.textContent = text;
 }
 
-// Each wallet exposes itself differently, and the provider is not always at
-// the top level: Backpack puts it under window.backpack.solana. Checking
-// both shapes is cheaper than telling the user their wallet is missing when
-// it is installed.
-function provider(kind){
-  if (kind === "phantom")
-    return (window.phantom && window.phantom.solana) || window.solana;
-  if (kind === "solflare") return window.solflare;
-  if (kind === "backpack")
-    return (window.backpack && window.backpack.solana) || window.backpack;
-  return null;
+// WALLET STANDARD, and the old way behind it.
+//
+// This page looked for each wallet at a fixed place: window.phantom.solana,
+// window.solflare, window.backpack.solana. Wallets move those. 10.09.2026 in
+// the Backpack app the object at that place could connect but had no
+// signMessage, and the page said "p.signMessage is not a function".
+//
+// Wallet Standard is how Phantom, Solflare and Backpack announce themselves
+// to a page today: each registers with the page and offers the same two
+// features, standard:connect and solana:signMessage. The page lists what
+// actually registered, so a wallet is shown only where it can be used. The
+// fixed places stay as a fallback for older app versions.
+const STD = [];
+const stdApi = {
+  register(...ws){
+    for (const w of ws){ if (w && !STD.includes(w)) STD.push(w); }
+    render();
+    return () => {
+      for (const w of ws){ const i = STD.indexOf(w); if (i >= 0) STD.splice(i, 1); }
+      render();
+    };
+  }
+};
+
+function usableStd(w){
+  const f = (w && w.features) || {};
+  const solana = (w.chains || []).some(c => String(c).startsWith("solana:"));
+  return solana && f["standard:connect"] && f["solana:signMessage"];
 }
 
-async function sign(kind){
+// The fixed places, for wallets that did not register.
+const LEGACY = [
+  ["Phantom",  () => (window.phantom && window.phantom.solana) ||
+                     (window.solana && window.solana.isPhantom && window.solana)],
+  ["Solflare", () => window.solflare],
+  ["Backpack", () => (window.backpack && window.backpack.solana) || window.backpack],
+];
+
+function render(){
+  const box = $$("wallets");
+  if (!box) return;
+  box.textContent = "";
+  const std = STD.filter(usableStd);
+  const names = std.map(w => String(w.name || "").toLowerCase());
+  for (const w of std){
+    const b = document.createElement("button");
+    b.className = "btn";
+    if (w.icon){
+      const img = document.createElement("img");
+      img.src = w.icon; img.alt = "";
+      b.appendChild(img);
+    }
+    b.appendChild(document.createTextNode(w.name || "Wallet"));
+    b.addEventListener("click", () => signStd(w));
+    box.appendChild(b);
+  }
+  for (const [name, get] of LEGACY){
+    if (names.some(n => n.includes(name.toLowerCase()))) continue;
+    if (!get()) continue;
+    const b = document.createElement("button");
+    b.className = std.length ? "btn ghost" : "btn";
+    b.textContent = name;
+    b.addEventListener("click", () => signLegacy(name, get()));
+    box.appendChild(b);
+  }
+  if (!box.children.length){
+    const d = document.createElement("div");
+    d.className = "none";
+    d.textContent = "No Solana wallet found in this browser. Open this page "
+      + "in the browser inside Phantom, Solflare or Backpack.";
+    box.appendChild(d);
+  }
+}
+
+function pasted(){
   const text = ($$("msg").value || "");
   if (!text.trim()){
     say("Paste the text from the bot first.", "err");
+    return null;
+  }
+  // The EXACT bytes of what was pasted. Not trimmed, not normalised: the
+  // bot checks the text it sent, and a cleanup here would break the proof.
+  return new TextEncoder().encode(text);
+}
+
+function done(raw){
+  const arr = raw instanceof Uint8Array ? raw : new Uint8Array(raw || []);
+  if (arr.length !== 64){
+    say("That wallet returned something unexpected (" + arr.length +
+        " bytes, expected 64). Try another wallet.", "err");
     return;
   }
-  const p = provider(kind);
+  const out = $$("sig");
+  out.textContent = toBase58(arr);
+  out.classList.remove("empty");
+  $$("copy").disabled = false;
+  say("Signed. Copy it below and paste it into the chat.", "okc");
+}
+
+function failed(e){
+  // A rejected prompt is not a failure worth alarming anyone about.
+  const m = (e && e.message) || String(e);
+  say(/reject|denied|cancel/i.test(m)
+      ? "You cancelled the signature."
+      : "That did not work: " + m, "err");
+}
+
+function sameBytes(a, b){
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+async function signStd(w){
+  const bytes = pasted();
+  if (!bytes) return;
+  try {
+    say("Waiting for " + (w.name || "the wallet") + "…");
+    const res = await w.features["standard:connect"].connect();
+    const accts = (res && res.accounts && res.accounts.length)
+      ? res.accounts : (w.accounts || []);
+    const acct = accts.find(a => (a.chains || []).some(
+      c => String(c).startsWith("solana:"))) || accts[0];
+    if (!acct){
+      say(w.name + " did not share an account. Unlock it and try again.", "err");
+      return;
+    }
+    $$("addr").textContent = acct.address;
+    const out = await w.features["solana:signMessage"].signMessage(
+      { account: acct, message: bytes });
+    const first = Array.isArray(out) ? out[0] : out;
+    // A wallet may sign a changed message (some add a prefix). The bot
+    // checks the text it sent, so a changed message can never pass.
+    if (first && first.signedMessage && !sameBytes(
+        new Uint8Array(first.signedMessage), bytes)){
+      say(w.name + " changed the text before signing, so the bot cannot "
+          + "check it. Use another wallet for this step.", "err");
+      return;
+    }
+    done(first && first.signature);
+  } catch (e){ failed(e); }
+}
+
+async function signLegacy(name, p){
+  const bytes = pasted();
+  if (!bytes) return;
   if (!p){
-    say(kind + " was not found in this browser. Install it, or try another "
-        + "button.", "err");
+    say(name + " was not found in this browser.", "err");
     return;
   }
   try {
-    say("Waiting for the wallet…");
-    if (!p.isConnected) await p.connect();
-    const pk = p.publicKey || (p.publicKey && p.publicKey.toString);
+    say("Waiting for " + name + "…");
+    let r = null;
+    if (!p.isConnected && typeof p.connect === "function") r = await p.connect();
+    const pk = p.publicKey || (r && r.publicKey);
     $$("addr").textContent = pk ? pk.toString() : "connected";
-
-    // The message is signed as the EXACT bytes of what was pasted. Not
-    // trimmed, not normalised: the bot checks the text it sent, and a
-    // helpful cleanup here would break the very thing it is meant to prove.
-    const bytes = new TextEncoder().encode(text);
-    const res = await p.signMessage(bytes, "utf8");
-
-    // Wallets return either the raw bytes or an object with .signature.
-    const raw = (res && res.signature) ? res.signature : res;
-    const arr = raw instanceof Uint8Array ? raw : new Uint8Array(raw);
-    if (!arr || arr.length !== 64){
-      say("That wallet returned something unexpected (" +
-          (arr ? arr.length : 0) + " bytes, expected 64).", "err");
+    if (typeof p.signMessage !== "function"){
+      say(name + " is connected but does not offer message signing in this "
+          + "browser. Update the app, or open this page in Phantom or "
+          + "Solflare.", "err");
       return;
     }
-    $$("sig").textContent = toBase58(arr);
-    $$("copy").disabled = false;
-    say("Signed. Copy it below and paste it into the chat.", "okc");
-  } catch (e){
-    // A rejected prompt is not a failure worth alarming anyone about.
-    const m = (e && e.message) || String(e);
-    say(/reject|denied|cancel/i.test(m)
-        ? "You cancelled the signature."
-        : "That did not work: " + m, "err");
-  }
+    const res = await p.signMessage(bytes, "utf8");
+    // Wallets return either the raw bytes or an object with .signature.
+    done((res && res.signature) ? res.signature : res);
+  } catch (e){ failed(e); }
 }
 
-$$("phantom").addEventListener("click", () => sign("phantom"));
-$$("solflare").addEventListener("click", () => sign("solflare"));
-$$("backpack").addEventListener("click", () => sign("backpack"));
+// Wallets register as they load, and some load after this page. The list
+// is drawn now, and again when they arrive (register() redraws itself); the
+// two late passes catch the fixed-place wallets that never register.
+// Listening first, then announcing: wallets that loaded before this page
+// answer the announcement, wallets that load later send their own event.
+// Both only after everything above exists, so a wallet that answers at once
+// finds render() ready.
+window.addEventListener("wallet-standard:register-wallet", e => {
+  try { e.detail(stdApi); } catch (_) {}
+});
+try {
+  window.dispatchEvent(new CustomEvent("wallet-standard:app-ready",
+                                       { detail: stdApi }));
+} catch (_) {}
+render();
+setTimeout(render, 400);
+setTimeout(render, 1500);
+
 $$("copy").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText($$("sig").textContent);

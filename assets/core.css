@@ -3,6 +3,11 @@
   --bg:#06080d; --panel:#0a0f17; --line:#16202b;
   --ink:#e8eef0; --dim:#7b8c94; --faint:#54636b;
   --green:#19e8a0; --red:#ff5470; --gold:#ffce6a;
+  /* Aliases. /sign/, /bot/ and /api/ were written against --accent and
+     --fg, which never existed here, so their buttons rendered with no
+     background and near-black text: "Phantom" and "Solflare" were on the
+     page and all but invisible (10.09.2026). */
+  --accent:var(--green); --fg:var(--ink);
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --sans:'Space Grotesk',system-ui,sans-serif;
 }
