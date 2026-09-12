@@ -18,9 +18,44 @@ const ago = t => { if (!t) return "n/a"; const s = Math.floor(Date.now() / 1000 
 const scanLink = (a, chain) => (chain === "base")
   ? "https://basescan.org/address/" + a : "https://solscan.io/account/" + a;
 
+/* A visitor id this browser made up, so the free scan allowance can be per
+   person rather than one pool shared by everybody who ever visited.
+
+   Deliberately not a fingerprint and not tied to anything identifying: a
+   random string, kept locally, sent with every call. A new private window
+   is a new visitor, which is fine. This is a funnel to the bot, not a wall,
+   and the server keeps its own shared ceiling behind it. */
+function visitorId() {
+  try {
+    let v = localStorage.getItem("fp_vid");
+    if (!v || !/^[A-Za-z0-9_-]{16,64}$/.test(v)) {
+      const b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      v = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("fp_vid", v);
+    }
+    return v;
+  } catch (e) {
+    return "";          // private mode with storage off: the server copes
+  }
+}
+
+/* Thrown when the free scans are used up, so a caller can show the bot link
+   instead of the generic "HTTP 402" nobody can act on. */
+class ScanLimit extends Error {}
+
 async function api(path, opts) {
-  const r = await fetch(API + path,
-    Object.assign({ headers: { "content-type": "application/json" } }, opts || {}));
+  const headers = Object.assign(
+    { "content-type": "application/json" },
+    ((opts || {}).headers) || {});
+  const v = visitorId();
+  if (v) headers["x-visitor-id"] = v;
+  const r = await fetch(API + path, Object.assign({}, opts || {}, { headers }));
+  if (r.status === 402) {
+    let msg = "";
+    try { msg = ((await r.json()) || {}).error || ""; } catch (e) {}
+    throw new ScanLimit(msg || "Free scans used up for today.");
+  }
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
 }

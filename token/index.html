@@ -42,7 +42,14 @@ function row(label, value, cls){
 
 function render(r){
   const out = $("#out"); out.innerHTML = "";
-  if (!r || r.error){ out.append(emptyBox("Scan failed.", r && r.error ? r.error : "Try again in a moment.")); return; }
+  if (!r || r.error){
+    // 307: a used-up allowance is not a failed scan, and the heading has
+    // to say so. "Scan failed." over an invitation to the bot reads as a
+    // broken site making an excuse.
+    out.append(emptyBox(r && r.limit ? "Five scans done." : "Scan failed.",
+                        r && r.error ? r.error : "Try again in a moment."));
+    return;
+  }
 
   const risk = r.risk || {}, mk = r.market || {}, b = r.bundles || {}, rc = r.rugcheck || {};
   const rs = risk.score;
@@ -282,8 +289,23 @@ async function run(mint){
     render(r);
     history.replaceState(null,"","/token/?m="+encodeURIComponent(mint));
   }catch(e){
-    $("#traceTitle").textContent = "FAILED";
-    render({error:"CORE API did not answer, or that address is not supported."});
+    // 307: the free allowance is not a failure, it is the point at which
+    // this person is worth inviting into the bot. Rendering it as "FAILED"
+    // with a generic error would lose exactly the visitor who scanned five
+    // tokens and cared enough to want a sixth.
+    if (e instanceof ScanLimit) {
+      $("#traceTitle").textContent = "LIMIT";
+      const bot = "https://t.me/FinnputerTradeBot";
+      render({limit:true, error:
+        (e.message || "That is your free scans for today.") +
+        '<br><br><a class="botlink" href="' + bot + '" target="_blank" ' +
+        'rel="noopener">Carry on in the bot</a><br>' +
+        '<span class="dim">No limit there, and it scans Base, Ethereum, ' +
+        'Robinhood and Stable too.</span>'});
+    } else {
+      $("#traceTitle").textContent = "FAILED";
+      render({error:"CORE API did not answer, or that address is not supported."});
+    }
   }
   $("#scan").disabled = false;
 }
