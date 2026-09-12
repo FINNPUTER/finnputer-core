@@ -48,9 +48,25 @@ async function api(path, opts) {
   const headers = Object.assign(
     { "content-type": "application/json" },
     ((opts || {}).headers) || {});
+  /* 319: the visitor id is a CUSTOM header, and a custom header on a
+     cross-origin request makes the browser send a preflight first. When
+     the API did not list x-visitor-id in Access-Control-Allow-Headers the
+     preflight failed and the browser refused every call, so the whole site
+     read "CORE API not reachable" over one optional feature.
+
+     The API lists it now. This retry is the belt: if a call fails outright
+     and we were sending the header, try once more without it. Losing the
+     free-scan counter is a small thing; losing the site is not. */
   const v = visitorId();
   if (v) headers["x-visitor-id"] = v;
-  const r = await fetch(API + path, Object.assign({}, opts || {}, { headers }));
+  let r;
+  try {
+    r = await fetch(API + path, Object.assign({}, opts || {}, { headers }));
+  } catch (e) {
+    if (!v) throw e;
+    delete headers["x-visitor-id"];
+    r = await fetch(API + path, Object.assign({}, opts || {}, { headers }));
+  }
   if (r.status === 402) {
     let msg = "";
     try { msg = ((await r.json()) || {}).error || ""; } catch (e) {}
