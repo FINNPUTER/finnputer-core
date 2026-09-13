@@ -62,7 +62,7 @@ function render(w, addr){
   d.innerHTML = `<h3>Where the score comes from</h3><div class="bars" style="margin-top:12px">
     ${r("tokens witnessed", w.winners)}
     ${r("closed trades", w.closed_trades)}
-    ${r("win rate", w.win_rate==null?"n/a":w.win_rate+"%")}
+    ${r("win rate", deepRate(w))}
     ${r("net returned", (w.net_sol||0).toFixed(2)+" SOL")}
     ${r("best multiple", w.best_multiple?w.best_multiple.toFixed(2)+"x":"n/a")}
     ${r("average multiple", w.avg_multiple?w.avg_multiple.toFixed(2)+"x":"n/a")}
@@ -147,6 +147,44 @@ async function run(a){
 $("#go").addEventListener("click", () => run($("#addr").value));
 $("#addr").addEventListener("keydown", e => { if(e.key==="Enter") run($("#addr").value); });
 const pre = qs("a"); if (pre){ $("#addr").value = pre; run(pre); }
+</script>
+<script>
+/* 323: the real win rate, when the wallet's own history has been read.
+
+   Every line on this page said "exit unknown" and the win rate said "n/a",
+   because the archive only records the buys it witnessed. It never read the
+   wallet. The API can now read it, on request, and returns it under "deep".
+
+   On request and not automatically: a full history is up to twenty Helius
+   pages, so a page that read one for every visitor would spend the credit
+   budget on curiosity. */
+function deepRate(w){
+  const d = w && w.deep;
+  if (d && (d.wins != null) && ((d.wins + d.losses) > 0)) {
+    const closed = d.wins + d.losses;
+    return (100 * d.wins / closed).toFixed(1) + "% <span class=\"dim\">("
+      + closed + " closed)</span>";
+  }
+  if (w && w.win_rate != null) return w.win_rate + "%";
+  if (w && w.deep_available) {
+    return '<a class="deeplink" href="#" onclick="readDeep();return false;" '
+      + 'style="color:var(--green);text-decoration:underline;cursor:pointer">'
+      + 'read the wallet</a>';
+  }
+  return "n/a";
+}
+
+async function readDeep(){
+  const el = document.querySelector(".deeplink");
+  if (el) el.textContent = "reading, up to a minute…";
+  try {
+    const a = new URLSearchParams(location.search).get("a");
+    const d = await api("/v1/wallet/" + encodeURIComponent(a) + "?deep=1");
+    render(d, a);
+  } catch (e) {
+    if (el) el.textContent = "could not read it";
+  }
+}
 </script>
 </body>
 </html>
