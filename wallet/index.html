@@ -103,8 +103,20 @@ function render(w, addr){
     const rows = toks.map(x => {
       const sym = x.symbol || short(x.mint || "");
       const tm = x.token_multiple ? Number(x.token_multiple).toFixed(1)+"x" : "\u2014";
-      const wm = x.wallet_multiple ? Number(x.wallet_multiple).toFixed(1)+"x"
-               : (x.realized ? "\u2014" : "<span style='color:var(--faint)'>exit unknown</span>");
+      /* 324: the deep reading first, because it is the only source that
+         actually watched the wallet sell. wallet_multiple comes from what
+         the archive witnessed and is usually absent, which is why every
+         line read "exit unknown" even after the history had been read. */
+      /* 326: a dust position's multiple is arithmetic, not a result. One
+         wallet showed 3398.79x from a buy of a few thousand lamports. Shown,
+         because hiding a real trade is worse, but marked so nobody reads it
+         as the wallet's finest hour. */
+      const wm = x.deep_x != null
+               ? Number(x.deep_x).toFixed(2) + "x"
+                 + (x.deep_dust ? " <span style='color:var(--faint)'>(dust)</span>" : "")
+                 + (x.deep_closed ? "" : " <span style='color:var(--faint)'>(open)</span>")
+               : (x.wallet_multiple ? Number(x.wallet_multiple).toFixed(1)+"x"
+               : (x.realized ? "\u2014" : "<span style='color:var(--faint)'>exit unknown</span>"));
       const rk = x.rank != null ? "#"+x.rank : "\u2014";
       return `<tr>
         <td style="padding:6px 10px 6px 0">$${sym}</td>
